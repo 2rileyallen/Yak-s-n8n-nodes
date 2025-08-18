@@ -21,7 +21,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx rimraf dist && tsc && npm run postbuild:assets",
-    "postbuild:assets": "cpy \"nodes/Yak-FFMPEG/manifest.json\" \"nodes/Yak-FFMPEG/ffmpeg_functions/**\" \"nodes/Yak-FFMPEG/FFMPEG.svg\" dist/nodes/Yak-FFMPEG --parents",
+    "postbuild:assets": "npx cpy \"nodes/**/*.!(ts)\" dist/nodes --parents",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials package.json",

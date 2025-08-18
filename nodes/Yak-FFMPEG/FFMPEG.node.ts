@@ -12,7 +12,8 @@ import {
 import { spawn } from 'child_process';
 import * as path from 'path';
 import { promises as fs } from 'fs';
-import * as os from 'os';
+import { binaryToTempFile } from '../../SharedFunctions/binaryToTempFile';
+import { fileToBinary } from '../../SharedFunctions/fileToBinary';
 
 // --- HELPER FUNCTION ---
 async function readJson<T = any>(filePath: string): Promise<T> {
@@ -176,6 +177,18 @@ export class FFMPEG implements INodeType {
         const nodeDir = __dirname;
         let tempFiles: string[] = [];
 
+        // Prepare temp directories
+        const tempInputDir = path.join(process.cwd(), 'temp', 'input');
+        const tempOutputDir = path.join(process.cwd(), 'temp', 'output');
+
+        // Ensure temp directories exist
+        try {
+            await fs.mkdir(tempInputDir, { recursive: true });
+            await fs.mkdir(tempOutputDir, { recursive: true });
+        } catch (error) {
+            // Directories might already exist, ignore error
+        }
+
         for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
             try {
                 const selectedFunctionValue = this.getNodeParameter('selectedFunction', itemIndex, '') as string;
@@ -205,19 +218,30 @@ export class FFMPEG implements INodeType {
                     }
                 }
 
-                // BINARY INPUT HANDLING
+                // BINARY INPUT HANDLING - Using SharedFunctions
                 const processedParameters = { ...parameters };
 
-                const binaryToggleKeys = Object.keys(processedParameters).filter((k) => k.endsWith('IsBinary'));
+                // Handle input binary/file path toggles
+                const inputUseFilePathKeys = Object.keys(processedParameters).filter((k) => k.endsWith('UseFilePath'));
 
-                for (const toggleKey of binaryToggleKeys) {
-                    if (processedParameters[toggleKey] === true) {
-                        const prefix = toggleKey.replace('IsBinary', '');
+                for (const toggleKey of inputUseFilePathKeys) {
+                    const useFilePath = processedParameters[toggleKey] as boolean;
+                    const prefix = toggleKey.replace('UseFilePath', '');
+                    
+                    if (useFilePath) {
+                        // User chose file path - use the file path parameter directly
+                        const filePathKey = `${prefix}FilePath`;
+                        if (processedParameters[filePathKey]) {
+                            // File path is already set, no conversion needed
+                            continue;
+                        }
+                    } else {
+                        // User chose binary - convert binary to temp file
                         const binaryPropNameKey = `${prefix}BinaryPropertyName`;
-
+                        
                         if (processedParameters[binaryPropNameKey]) {
                             const binaryPropertyName = processedParameters[binaryPropNameKey] as string;
-
+                            
                             const inputData = items[itemIndex];
                             const binaryInfo = inputData.binary?.[binaryPropertyName];
 
@@ -228,20 +252,32 @@ export class FFMPEG implements INodeType {
                                 );
                             }
 
-                            const binaryBuffer = await this.helpers.getBinaryDataBuffer(itemIndex, binaryPropertyName);
-                            const fileName = binaryInfo.fileName ?? `${binaryPropertyName}.bin`;
+                            // Use SharedFunction to convert binary to temp file
+                            const tempFilePath = await binaryToTempFile(this, itemIndex, binaryPropertyName, tempInputDir);
+                            tempFiles.push(tempFilePath);
 
-                            const tempPath = path.join(os.tmpdir(), `n8n-ffmpeg-bin-${Date.now()}-${fileName}`);
-                            await fs.writeFile(tempPath, binaryBuffer);
-                            tempFiles.push(tempPath);
-
-                            // Replace with actual temp file path for the Python script
-                            processedParameters[binaryPropNameKey] = tempPath;
+                            // Replace the binary property name with the actual file path for the Python script
+                            const filePathKey = `${prefix}FilePath`;
+                            processedParameters[filePathKey] = tempFilePath;
                         }
                     }
                 }
 
-                const paramsPath = path.join(os.tmpdir(), `n8n-ffmpeg-params-${Date.now()}-${itemIndex}.json`);
+                // Handle output settings - determine if user wants file path or binary output
+                const outputAsFilePath = processedParameters.outputAsFilePath as boolean;
+                let outputFilePath: string;
+
+                if (outputAsFilePath && processedParameters.outputFilePath) {
+                    // User specified a file path for output
+                    outputFilePath = processedParameters.outputFilePath as string;
+                } else {
+                    // Generate temp output path for binary return
+                    outputFilePath = path.join(tempOutputDir, `output_${Date.now()}_${itemIndex}.mp4`);
+                }
+
+                processedParameters.outputFilePath = outputFilePath;
+
+                const paramsPath = path.join(tempInputDir, `n8n-ffmpeg-params-${Date.now()}-${itemIndex}.json`);
                 await fs.writeFile(paramsPath, JSON.stringify(processedParameters, null, 2));
                 tempFiles.push(paramsPath);
 
@@ -274,21 +310,47 @@ export class FFMPEG implements INodeType {
                     jsonResult = { output: scriptResult, parseError: true };
                 }
 
-                // BINARY OUTPUT HANDLING
-                if (jsonResult.binary_data && jsonResult.file_name) {
-                    const binaryBuffer = Buffer.from(jsonResult.binary_data as string, 'base64');
-                    const binaryData = await this.helpers.prepareBinaryData(binaryBuffer, jsonResult.file_name as string);
+                // BINARY OUTPUT HANDLING - Using SharedFunctions
+                let executionData: INodeExecutionData;
 
-                    const executionData: INodeExecutionData = {
-                        json: {},
-                        binary: { data: binaryData },
+                if (outputAsFilePath) {
+                    // Return file path in JSON
+                    executionData = {
+                        json: { 
+                            ...jsonResult, 
+                            outputFilePath: jsonResult.output_file_path || outputFilePath 
+                        },
                         pairedItem: { item: itemIndex },
                     };
-                    returnData.push(executionData);
                 } else {
-                    // Standard non-binary output
-                    returnData.push({ json: jsonResult, pairedItem: { item: itemIndex } });
+                    // Convert output file to binary using SharedFunction
+                    const outputBinaryPropertyName = (processedParameters.outputBinaryPropertyName as string) || 'data';
+                    
+                    // Check if the output file exists
+                    const finalOutputPath = (jsonResult.output_file_path as string) || outputFilePath;
+                    
+                    try {
+                        await fs.access(finalOutputPath);
+                        const binaryData = await fileToBinary(finalOutputPath, outputBinaryPropertyName, this.helpers);
+                        
+                        executionData = {
+                            json: { ...jsonResult },
+                            binary: { [outputBinaryPropertyName]: binaryData },
+                            pairedItem: { item: itemIndex },
+                        };
+
+                        // Clean up temp output file
+                        tempFiles.push(finalOutputPath);
+                    } catch (error) {
+                        throw new NodeOperationError(
+                            this.getNode(),
+                            `Output file not found: ${finalOutputPath}. Script may have failed to generate output.`,
+                        );
+                    }
                 }
+
+                returnData.push(executionData);
+
             } catch (error) {
                 if (this.continueOnFail()) {
                     returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: itemIndex } });
@@ -296,6 +358,7 @@ export class FFMPEG implements INodeType {
                 }
                 throw error;
             } finally {
+                // Clean up temp files
                 for (const filePath of tempFiles) {
                     try {
                         await fs.unlink(filePath);
