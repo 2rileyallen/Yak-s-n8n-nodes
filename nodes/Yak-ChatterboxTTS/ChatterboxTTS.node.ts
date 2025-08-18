@@ -1,7 +1,7 @@
 import type { IExecuteFunctions, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionType } from 'n8n-workflow';
 
-export class YakChatterboxTTS implements INodeType {
+export class ChatterboxTTS implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Yak – ChatterboxTTS',
     name: 'yakChatterboxtts',

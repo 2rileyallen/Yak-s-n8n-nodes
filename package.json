@@ -20,7 +20,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "npx rimraf dist && tsc && gulp build:icons",
+    "build": "npx rimraf dist && tsc && npm run postbuild:assets",
+    "postbuild:assets": "cpy \"nodes/Yak-FFMPEG/manifest.json\" \"nodes/Yak-FFMPEG/ffmpeg_functions/**\" \"nodes/Yak-FFMPEG/FFMPEG.svg\" dist/nodes/Yak-FFMPEG --parents",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials package.json",
@@ -34,21 +35,23 @@
     "n8nNodesApiVersion": 1,
     "credentials": [],
     "nodes": [
-    "dist/nodes/Yak-ChatterboxTTS/ChatterboxTTS.node.js",
-    "dist/nodes/Yak-ComfyUI/ComfyUI.node.js",
-    "dist/nodes/Yak-FFMPEG/FFMPEG.node.js",
-    "dist/nodes/Yak-MuseTalk/MuseTalk.node.js",
-    "dist/nodes/Yak-VocalRemover/VocalRemover.node.js",
-    "dist/nodes/Yak-WhisperSTT/WhisperSTT.node.js"
-  ]
+      "dist/nodes/Yak-ChatterboxTTS/ChatterboxTTS.node.js",
+      "dist/nodes/Yak-ComfyUI/ComfyUI.node.js",
+      "dist/nodes/Yak-FFMPEG/FFMPEG.node.js",
+      "dist/nodes/Yak-MuseTalk/MuseTalk.node.js",
+      "dist/nodes/Yak-VocalRemover/VocalRemover.node.js",
+      "dist/nodes/Yak-WhisperSTT/WhisperSTT.node.js"
+    ]
   },
   "devDependencies": {
+    "@types/node": "^24.3.0",
     "@typescript-eslint/parser": "~8.32.0",
+    "cpy-cli": "^5.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^5.0.0",
     "prettier": "^3.5.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
