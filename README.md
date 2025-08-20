@@ -72,11 +72,9 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
 4.  **Install Python Dependencies:**
     * Install the specific PyTorch version for CUDA 12.1:
         ```bash
-        pip install torch==2.1.0 torchvision==0.16.0+cu121 torchaudio==2.1.0 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
+        pip install torch==2.1.0 torchvision==0.16.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
         ```
-    * Install the dependencies for the Gatekeeper server:
-        ```bash
-        pip install sqlalchemy fastapi "uvicorn[standard]" httpx
+        pip install torchaudio==2.1.0 --extra-index-url https://download.pytorch.org/whl/cu121
         ```
     * Navigate to the MuseTalk software directory and install its requirements:
         ```bash
@@ -90,6 +88,10 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
         pip install mmcv==2.1.0 -f [https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html](https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html)
         pip install mmdet==3.2.0
         pip install mmpose==1.3.1
+        ```
+    * Install the dependencies for the Gatekeeper server:
+        ```bash
+        pip install sqlalchemy fastapi "uvicorn[standard]" httpx
         ```
 
 5.  **Start the Gatekeeper:**
