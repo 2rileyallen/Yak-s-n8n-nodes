@@ -1,0 +1,48 @@
+# Node.js & Development files
+node_modules
+dist
+.DS_Store
+.tmp
+tmp
+npm-debug.log*
+yarn.lock
+.vscode/launch.json
+temp/
+
+# --- Gatekeeper & Local Node Files ---
+
+# Ignore the Gatekeeper's SQLite database
+nodes/Yak-MuseTalk/musetalk_gatekeeper.sqlite
+
+# Ignore the temporary folder specifically for the Yak-MuseTalk node
+nodes/Yak-MuseTalk/results/
+
+# Ignore Python cache folders that might appear in your node directory
+nodes/Yak-MuseTalk/__pycache__/
+
+# --- MuseTalk Specific Files (IMPORTANT) ---
+# This section ensures your modified code is tracked, but large assets are not.
+
+# Ignore all AI model files
+Software/MuseTalk/models/
+
+# Ignore datasets used for training
+Software/MuseTalk/dataset/
+
+# Ignore generated results and temporary outputs
+Software/MuseTalk/results/
+Software/MuseTalk/debug/
+Software/MuseTalk/exp_out/
+
+# Ignore downloaded FFmpeg binaries
+Software/MuseTalk/ffmpeg*
+Software/MuseTalk/ffmprobe*
+Software/MuseTalk/ffplay*
+
+# Ignore Gradio cache
+Software/MuseTalk/.gradio/
+
+# Ignore general Python cache and log files within the MuseTalk directory
+Software/MuseTalk/**/__pycache__/
+Software/MuseTalk/*.log
+Software/MuseTalk/*.pyc
