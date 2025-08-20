@@ -1,0 +1,54 @@
+# ------------------------------------------------------------------
+# ComfyUI Extra Model Paths Configuration
+# ------------------------------------------------------------------
+#
+# INSTRUCTIONS:
+# 1. Copy this file into your main ComfyUI installation folder
+#    (e.g., /Software/ComfyUI/).
+# 2. Rename this file to "extra_model_paths.yaml".
+# 3. Edit the TWO placeholder paths below to match your system.
+#
+# ------------------------------------------------------------------
+
+
+# This entry points to the managed models required for the Yak n8n workflows.
+# You MUST update the "base_path" to the absolute path of your "yak-s-n8n-nodes" repository folder.
+yak:
+    base_path: C:\path\to\your\yak-s-n8n-nodes\nodes\Yak-ComfyUI\
+    
+    checkpoints: managed_models/checkpoints
+    clip: managed_models/clip
+    clip_vision: managed_models/clip_vision
+    configs: managed_models/configs
+    controlnet: managed_models/controlnet
+    diffusers: managed_models/diffusers
+    diffusion_models: managed_models/diffusion_models
+    embeddings: managed_models/embeddings
+    gligen: managed_models/gligen
+    hypernetworks: managed_models/hypernetworks
+    loras: managed_models/loras
+    onnx: managed_models/onnx
+    photomaker: managed_models/photomaker
+    sams: managed_gmodels/sams
+    style_models: managed_models/style_models
+    text_encoders: managed_models/text_encoders
+    unet: managed_models/unet
+    upscale_models: managed_models/upscale_models
+    vae: managed_models/vae
+    vae_approx: managed_models/vae_approx
+
+
+# (Optional) This entry can point to your personal, large model library.
+# If you have one, update the "base_path" to its location. If not, you can delete this entire "personal_drive" section.
+personal_drive:
+    base_path: "D:\\path\\to\\your\\personal\\ComfyUI - Models"
+    
+    checkpoints: checkpoints/
+    clip: clip/
+    clip_vision: clip_vision/
+    configs: configs/
+    controlnet: controlnet/
+    loras: loras/
+    upscale_models: upscale_models/
+    vae: vae/
+    # Add any other model types you have in your personal folder

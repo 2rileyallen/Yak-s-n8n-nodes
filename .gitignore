@@ -46,3 +46,8 @@ Software/MuseTalk/.gradio/
 Software/MuseTalk/**/__pycache__/
 Software/MuseTalk/*.log
 Software/MuseTalk/*.pyc
+
+# Ignore the entire ComfyUI application
+/Software/ComfyUI/
+/nodes/Yak-ComfyUI/__pycache__/
+/nodes/Yak-ComfyUI/managed_models/*
