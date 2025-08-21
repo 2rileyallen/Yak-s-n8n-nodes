@@ -1,0 +1,127 @@
+{
+  "properties": [
+    {
+      "displayName": "--- Input Settings ---",
+      "name": "inputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Use File Path for Input Image",
+      "name": "inputUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Use a file path for the input image. Uncheck to use binary data from a previous node."
+    },
+    {
+      "displayName": "File Path",
+      "name": "inputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "inputUseFilePath": [
+            true
+          ]
+        }
+      },
+      "placeholder": "/path/to/your/image.png",
+      "description": "The full file path to the source image to be edited.",
+      "required": true
+    },
+    {
+      "displayName": "Binary Property Name",
+      "name": "inputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "inputUseFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name of the binary property from a previous node containing the input image.",
+      "required": true
+    },
+    {
+      "displayName": "Prompt",
+      "name": "prompt",
+      "type": "string",
+      "typeOptions": {
+        "rows": 4
+      },
+      "default": "make him wear a tank top",
+      "placeholder": "Describe the edit you want to make...",
+      "description": "The instructions for how to edit the image.",
+      "required": true
+    },
+    {
+      "displayName": "Batch Size",
+      "name": "batchSize",
+      "type": "number",
+      "typeOptions": {
+        "minValue": 1
+      },
+      "default": 1,
+      "description": "The number of images to generate."
+    },
+    {
+      "displayName": "--- Output Settings ---",
+      "name": "outputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Output as File Path",
+      "name": "outputAsFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to save the output to a specified file path. Uncheck to output as binary data."
+    },
+    {
+      "displayName": "Output File Path",
+      "name": "outputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            true
+          ]
+        }
+      },
+      "placeholder": "/path/to/output.png",
+      "description": "The full file path to save the output image.",
+      "required": true
+    },
+    {
+      "displayName": "Output Binary Property Name",
+      "name": "outputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name to give the output binary property."
+    }
+  ],
+  "mappings": {
+    "inputImage": {
+      "nodeId": "117:116",
+      "path": "inputs.image"
+    },
+    "prompt": {
+      "nodeId": "117:76",
+      "path": "inputs.prompt"
+    },
+    "batchSize": {
+      "nodeId": "117:114",
+      "path": "inputs.batch_size"
+    }
+  }
+}

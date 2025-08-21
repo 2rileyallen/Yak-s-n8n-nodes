@@ -1,0 +1,109 @@
+{
+  "properties": [
+    {
+      "displayName": "Positive Prompt",
+      "name": "positivePrompt",
+      "type": "string",
+      "typeOptions": {
+        "rows": 4
+      },
+      "default": "a blonde attractive woman, portrait, amateurish quality with dramatic light and shadows, some blur and with vibe of 2000s street photography",
+      "placeholder": "Enter the positive prompt...",
+      "description": "The main subject and style of the image you want to generate.",
+      "required": true
+    },
+    {
+      "displayName": "Image Height",
+      "name": "imageHeight",
+      "type": "number",
+      "typeOptions": {
+        "minValue": 64,
+        "maxValue": 2048
+      },
+      "default": 1088,
+      "description": "The height of the output image in pixels."
+    },
+    {
+      "displayName": "Image Width",
+      "name": "imageWidth",
+      "type": "number",
+      "typeOptions": {
+        "minValue": 64,
+        "maxValue": 2048
+      },
+      "default": 720,
+      "description": "The width of the output image in pixels."
+    },
+    {
+      "displayName": "Batch Size",
+      "name": "batchSize",
+      "type": "number",
+      "typeOptions": {
+        "minValue": 1
+      },
+      "default": 1,
+      "description": "The number of images to generate."
+    },
+    {
+      "displayName": "--- Output Settings ---",
+      "name": "outputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Output as File Path",
+      "name": "outputAsFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to save the output to a specified file path. Uncheck to output as binary data."
+    },
+    {
+      "displayName": "Output File Path",
+      "name": "outputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            true
+          ]
+        }
+      },
+      "placeholder": "/path/to/output.png",
+      "description": "The full file path to save the output image.",
+      "required": true
+    },
+    {
+      "displayName": "Output Binary Property Name",
+      "name": "outputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name to give the output binary property."
+    }
+  ],
+  "mappings": {
+    "positivePrompt": {
+      "nodeId": "6",
+      "path": "inputs.text"
+    },
+    "imageHeight": {
+      "nodeId": "58",
+      "path": "inputs.height"
+    },
+    "imageWidth": {
+      "nodeId": "58",
+      "path": "inputs.width"
+    },
+    "batchSize": {
+      "nodeId": "58",
+      "path": "inputs.batch_size"
+    }
+  }
+}

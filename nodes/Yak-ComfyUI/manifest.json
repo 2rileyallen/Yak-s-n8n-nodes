@@ -6,6 +6,20 @@
       "uiFile": "workflows/basic-image-generation/ui_inputs.json",
       "workflowFile": "workflows/basic-image-generation/workflow.json",
       "dependenciesFile": "workflows/basic-image-generation/dependencies.json"
+    },
+    {
+      "name": "T2I Qwen",
+      "value": "T2I_Qwen",
+      "uiFile": "workflows/T2I_Qwen/ui_inputs.json",
+      "workflowFile": "workflows/T2I_Qwen/workflow.json",
+      "dependenciesFile": "workflows/T2I_Qwen/dependencies.json"
+    },
+    {
+      "name": "I2I Qwen Edit",
+      "value": "I2I_Qwen_Edit",
+      "uiFile": "workflows/I2I_Qwen_Edit/ui_inputs.json",
+      "workflowFile": "workflows/I2I_Qwen_Edit/workflow.json",
+      "dependenciesFile": "workflows/I2I_Qwen_Edit/dependencies.json"
     }
   ]
 }

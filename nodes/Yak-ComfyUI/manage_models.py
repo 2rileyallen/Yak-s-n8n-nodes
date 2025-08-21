@@ -2,7 +2,7 @@ import os
 import json
 import requests
 from tqdm import tqdm
-import hashlib
+import gdown # Import the new library
 
 # --- Configuration ---
 # The script assumes it's located in the /nodes/Yak-ComfyUI/ directory.
@@ -29,9 +29,11 @@ def get_required_models():
                         # The install_path from JSON is like "models/checkpoints/"
                         # We need to extract the subfolder name, e.g., "checkpoints"
                         model_type_folder = model.get('install_path', '').split('/')[1]
-                        if model.get('name') and model_type_folder and model.get('download_url'):
+                        # Prioritize direct download_url, but fall back to google_download_url
+                        download_url = model.get('download_url') or model.get('google_download_url')
+                        if model.get('name') and model_type_folder and download_url:
                             # Store as a tuple: (model_type_folder, filename, download_url)
-                            required.add((model_type_folder, model['name'], model['download_url']))
+                            required.add((model_type_folder, model['name'], download_url))
             except json.JSONDecodeError:
                 print(f"[WARNING] Could not parse {dep_path}")
             except Exception as e:
@@ -57,28 +59,40 @@ def get_existing_models():
     return existing
 
 def download_file(url, dest_path):
-    """Downloads a file from a URL to a destination, with a progress bar."""
-    print(f"Downloading '{os.path.basename(dest_path)}'...")
+    """
+    Downloads a file from a URL to a destination, with a progress bar.
+    Handles both direct HTTP links and Google Drive links.
+    """
+    filename = os.path.basename(dest_path)
+    print(f"Downloading '{filename}'...")
+
     try:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        total_size = int(response.headers.get('content-length', 0))
+        # Check if the URL is a Google Drive link
+        if 'drive.google.com' in url:
+            gdown.download(url, dest_path, quiet=False)
+        else:
+            # Use requests for direct downloads
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            total_size = int(response.headers.get('content-length', 0))
+            
+            with open(dest_path, 'wb') as f, tqdm(
+                desc=filename,
+                total=total_size,
+                unit='iB',
+                unit_scale=True,
+                unit_divisor=1024,
+            ) as bar:
+                for data in response.iter_content(chunk_size=1024):
+                    size = f.write(data)
+                    bar.update(size)
         
-        with open(dest_path, 'wb') as f, tqdm(
-            desc=os.path.basename(dest_path),
-            total=total_size,
-            unit='iB',
-            unit_scale=True,
-            unit_divisor=1024,
-        ) as bar:
-            for data in response.iter_content(chunk_size=1024):
-                size = f.write(data)
-                bar.update(size)
-        print("Download complete.")
+        print(f"Download of '{filename}' complete.")
         return True
-    except requests.exceptions.RequestException as e:
+
+    except Exception as e:
         print(f"\n[ERROR] Failed to download from {url}. Reason: {e}")
-        # Clean up partially downloaded file
+        # Clean up partially downloaded file if it exists
         if os.path.exists(dest_path):
             os.remove(dest_path)
         return False
@@ -100,11 +114,13 @@ def main():
     required_models_simple = {(m[0], m[1]) for m in required_models_full}
 
     # --- Step 1: Download missing models ---
-    models_to_download = required_models_full - {(m[0], m[1], "dummy_url") for m in existing_models}
+    # Create a dictionary for quick URL lookup
+    url_map = {(m[0], m[1]): m[2] for m in required_models_full}
+    models_to_download = required_models_simple - existing_models
     
-    for model_type, filename, url in models_to_download:
-        # Check if the model file is already present before attempting to download
-        if (model_type, filename) in existing_models:
+    for model_type, filename in models_to_download:
+        url = url_map.get((model_type, filename))
+        if not url:
             continue
 
         dest_folder = os.path.join(MANAGED_MODELS_DIR, model_type)

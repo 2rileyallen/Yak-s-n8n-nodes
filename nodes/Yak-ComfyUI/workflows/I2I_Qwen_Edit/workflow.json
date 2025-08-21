@@ -1,0 +1,227 @@
+{
+  "103": {
+    "inputs": {
+      "rgthree_comparer": {
+        "images": [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_hzjik_00007_.png&type=temp&subfolder=&rand=0.035503335544710524"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_hzjik_00008_.png&type=temp&subfolder=&rand=0.6336218824413188"
+          }
+        ]
+      },
+      "image_a": [
+        "117:116",
+        0
+      ],
+      "image_b": [
+        "117:115",
+        0
+      ]
+    },
+    "class_type": "Image Comparer (rgthree)",
+    "_meta": {
+      "title": "Image Comparer (rgthree)"
+    }
+  },
+  "117:105": {
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "117:106": {
+    "inputs": {
+      "strength": 1,
+      "model": [
+        "117:107",
+        0
+      ]
+    },
+    "class_type": "CFGNorm",
+    "_meta": {
+      "title": "CFGNorm"
+    }
+  },
+  "117:107": {
+    "inputs": {
+      "shift": 3,
+      "model": [
+        "117:110",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingAuraFlow",
+    "_meta": {
+      "title": "ModelSamplingAuraFlow"
+    }
+  },
+  "117:108": {
+    "inputs": {
+      "pixels": [
+        "117:109",
+        0
+      ],
+      "vae": [
+        "117:105",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "117:109": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "megapixels": 1,
+      "image": [
+        "117:116",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Scale Image to Total Pixels"
+    }
+  },
+  "117:111": {
+    "inputs": {
+      "unet_name": "Qwen_Image_Edit-Q3_K_M.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "Unet Loader (GGUF)"
+    }
+  },
+  "117:112": {
+    "inputs": {
+      "clip_name": "Qwen2.5-VL-7B-Instruct-Q2_K.gguf",
+      "type": "qwen_image"
+    },
+    "class_type": "CLIPLoaderGGUF",
+    "_meta": {
+      "title": "CLIPLoader (GGUF)"
+    }
+  },
+  "117:113": {
+    "inputs": {
+      "prompt": "blurry, low quality, low resolution, bad anatomy, extra limbs, missing limbs, deformed, distorted, poorly drawn, out of frame, watermark, signature, text, logo, grainy, noisy, jpeg artifacts, mutated hands, mutated fingers, bad proportions, cross-eyed, lazy eye, duplicate, cloned face, poorly rendered, ugly, disfigured, unnatural colors, overexposed, underexposed, bad perspective, bad lighting, out of focus, cropped, cut off, error, glitch, nsfw, censored, worst quality, low detail, bad composition",
+      "clip": [
+        "117:112",
+        0
+      ],
+      "vae": [
+        "117:105",
+        0
+      ],
+      "image": [
+        "117:109",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImageEdit",
+    "_meta": {
+      "title": "TextEncodeQwenImageEdit"
+    }
+  },
+  "117:114": {
+    "inputs": {
+      "seed": 266861941497879,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "117:106",
+        0
+      ],
+      "positive": [
+        "117:76",
+        0
+      ],
+      "negative": [
+        "117:113",
+        0
+      ],
+      "latent_image": [
+        "117:108",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "117:116": {
+    "inputs": {
+      "image": "miprofile.jpg"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "117:115": {
+    "inputs": {
+      "samples": [
+        "117:114",
+        0
+      ],
+      "vae": [
+        "117:105",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "117:110": {
+    "inputs": {
+      "lora_name": "Qwen-Image-Lightning-4steps-V1.0-bf16.safetensors",
+      "strength_model": 1,
+      "model": [
+        "117:111",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "117:76": {
+    "inputs": {
+      "prompt": "make him wear a tank top ",
+      "clip": [
+        "117:112",
+        0
+      ],
+      "vae": [
+        "117:105",
+        0
+      ],
+      "image": [
+        "117:109",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImageEdit",
+    "_meta": {
+      "title": "TextEncodeQwenImageEdit"
+    }
+  }
+}

@@ -8,31 +8,31 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Path to the root of the repository
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
-# Path to the workflows directory to scan for dependencies
-WORKFLOWS_DIR = os.path.join(SCRIPT_DIR, 'workflows')
+# The single source of truth for required custom nodes
+REQUIRED_NODES_FILE = os.path.join(SCRIPT_DIR, 'required_custom_nodes.json')
 # Path to the ComfyUI installation's custom_nodes directory
 CUSTOM_NODES_DIR = os.path.join(REPO_ROOT, 'Software', 'ComfyUI', 'custom_nodes')
 
 def get_required_nodes():
-    """Scans all workflow directories for dependencies.json files and builds a dictionary of required nodes."""
+    """Reads the central required_custom_nodes.json file and returns a dictionary of nodes."""
     required = {}
-    print(f"Scanning for workflows in: {WORKFLOWS_DIR}")
-    if not os.path.isdir(WORKFLOWS_DIR):
-        print(f"[ERROR] Workflows directory not found.")
+    print(f"Reading required nodes from: {REQUIRED_NODES_FILE}")
+    if not os.path.exists(REQUIRED_NODES_FILE):
+        print(f"[ERROR] Required nodes file not found.")
         return required
 
-    for root, _, files in os.walk(WORKFLOWS_DIR):
-        if 'dependencies.json' in files:
-            dep_path = os.path.join(root, 'dependencies.json')
-            try:
-                with open(dep_path, 'r') as f:
-                    data = json.load(f)
-                    for node in data.get('custom_nodes', []):
-                        if node.get('name') and node.get('git_url'):
-                            # Use the name as the key to avoid duplicates
-                            required[node['name']] = node['git_url']
-            except Exception as e:
-                print(f"[ERROR] An error occurred processing {dep_path}: {e}")
+    try:
+        with open(REQUIRED_NODES_FILE, 'r') as f:
+            data = json.load(f)
+            for node in data.get('custom_nodes', []):
+                if node.get('name') and node.get('git_url'):
+                    # Store the name, URL, and the recursive flag
+                    required[node['name']] = {
+                        "url": node['git_url'],
+                        "recursive": node.get('recursive', False) # Defaults to False if not present
+                    }
+    except Exception as e:
+        print(f"[ERROR] An error occurred processing {REQUIRED_NODES_FILE}: {e}")
     return required
 
 def run_command(command, cwd=None):
@@ -47,7 +47,7 @@ def run_command(command, cwd=None):
                 print(output.strip())
         return process.poll() == 0
     except Exception as e:
-        print(f"[ERROR] Failed to run command '{' '.join(command)}': {e}")
+        print(f"[ERROR] Failed to run command '{command}': {e}")
         return False
 
 def main():
@@ -61,11 +61,14 @@ def main():
 
     required_nodes = get_required_nodes()
     if not required_nodes:
-        print("No required custom nodes found in any dependencies.json file.")
+        print("No required custom nodes found in the JSON file.")
     else:
         print(f"Found {len(required_nodes)} required custom node(s).")
 
-    for name, url in required_nodes.items():
+    for name, data in required_nodes.items():
+        url = data['url']
+        is_recursive = data['recursive']
+        
         # The folder name is usually the last part of the git URL without the .git
         folder_name = url.split('/')[-1].replace('.git', '')
         node_path = os.path.join(CUSTOM_NODES_DIR, folder_name)
@@ -81,7 +84,9 @@ def main():
         else:
             # Node doesn't exist, so clone it
             print("Node not found. Cloning from repository...")
-            if not run_command(f'git clone {url}', cwd=CUSTOM_NODES_DIR):
+            clone_command = f'git clone {"--recursive " if is_recursive else ""}{url}'
+            print(f"Running command: {clone_command}")
+            if not run_command(clone_command, cwd=CUSTOM_NODES_DIR):
                  print(f"[ERROR] Failed to clone {name}.")
                  continue # Skip to the next node if cloning fails
 

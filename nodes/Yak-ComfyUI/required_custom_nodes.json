@@ -1,0 +1,77 @@
+{
+  "custom_nodes": [
+    {
+      "name": "comfyui_ultimatesdupscale",
+      "git_url": "https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git",
+      "recursive": true
+    },
+    {
+      "name": "ComfyUI--Wan22FirstLastFrameToVideoLatent",
+      "git_url": "https://github.com/stduhpf/ComfyUI--Wan22FirstLastFrameToVideoLatent.git"
+    },
+    {
+      "name": "ComfyUI-Crystools",
+      "git_url": "https://github.com/crystian/ComfyUI-Crystools.git"
+    },
+    {
+      "name": "comfyui-custom-scripts",
+      "git_url": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git"
+    },
+    {
+      "name": "comfyui-easy-use",
+      "git_url": "https://github.com/yolain/ComfyUI-Easy-Use.git"
+    },
+    {
+      "name": "ComfyUI-GGUF",
+      "git_url": "https://github.com/city96/ComfyUI-GGUF.git"
+    },
+    {
+      "name": "ComfyUI-IMGNR-Utils",
+      "git_url": "https://github.com/ImagineerNL/ComfyUI-IMGNR-Utils.git"
+    },
+    {
+      "name": "comfyui-impact-pack",
+      "git_url": "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git"
+    },
+    {
+      "name": "comfyui-kjnodes",
+      "git_url": "https://github.com/kijai/ComfyUI-KJNodes.git"
+    },
+    {
+      "name": "comfyui-logicutils",
+      "git_url": "https://github.com/aria1th/ComfyUI-LogicUtils.git"
+    },
+    {
+      "name": "comfyui-manager",
+      "git_url": "https://github.com/Comfy-Org/ComfyUI-Manager.git"
+    },
+    {
+      "name": "comfyui-videohelpersuite",
+      "git_url": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git"
+    },
+    {
+      "name": "ComfyUI-WanVideoKsampler",
+      "git_url": "https://github.com/ShmuelRonen/ComfyUI-WanVideoKsampler.git"
+    },
+    {
+      "name": "ComfyUI-WanVideoStartEndFrames",
+      "git_url": "https://github.com/raindrop313/ComfyUI-WanVideoStartEndFrames.git"
+    },
+    {
+      "name": "ComfyUI-WanVideoWrapper",
+      "git_url": "https://github.com/kijai/ComfyUI-WanVideoWrapper.git"
+    },
+    {
+      "name": "rgthree-comfy",
+      "git_url": "https://github.com/rgthree/rgthree-comfy.git"
+    },
+    {
+      "name": "wanblockswap",
+      "git_url": "https://github.com/orssorbit/ComfyUI-wanBlockswap.git"
+    },
+    {
+      "name": "wanvaceadvanced",
+      "git_url": "https://github.com/drozbay/ComfyUI-WanVaceAdvanced.git"
+    }
+  ]
+}

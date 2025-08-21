@@ -1,0 +1,34 @@
+{
+  "models": [
+    {
+      "name": "Qwen_Image-Q3_K_M.gguf",
+      "type": "unet",
+      "install_path": "models/unet/",
+      "download_url": "https://huggingface.co/QuantStack/Qwen-Image-GGUF/resolve/main/Qwen_Image-Q3_K_M.gguf"
+    },
+    {
+      "name": "Qwen-Image-Lightning-4steps-V1.0-bf16.safetensors",
+      "type": "lora",
+      "install_path": "models/loras/",
+      "download_url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0-bf16.safetensors"
+    },
+    {
+      "name": "lenovo.safetensors",
+      "type": "lora",
+      "install_path": "models/loras/",
+      "download_url": "https://huggingface.co/Danrisi/Lenovo_Qwen/resolve/main/lenovo.safetensors"
+    },
+    {
+      "name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "type": "text_encoder",
+      "install_path": "models/text_encoders/",
+      "download_url": "https://huggingface.co/f5aiteam/CLIP/resolve/main/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+    },
+    {
+      "name": "qwen_image_vae.safetensors",
+      "type": "vae",
+      "install_path": "models/vae/",
+      "download_url": "https://huggingface.co/f5aiteam/VAE/resolve/main/qwen_image_vae.safetensors"
+    }
+  ]
+}
