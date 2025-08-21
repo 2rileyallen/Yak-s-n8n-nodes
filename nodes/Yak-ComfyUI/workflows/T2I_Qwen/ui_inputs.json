@@ -10,7 +10,8 @@
       "default": "a blonde attractive woman, portrait, amateurish quality with dramatic light and shadows, some blur and with vibe of 2000s street photography",
       "placeholder": "Enter the positive prompt...",
       "description": "The main subject and style of the image you want to generate.",
-      "required": true
+      "required": true,
+      "mapsTo": "positivePrompt"
     },
     {
       "displayName": "Image Height",
@@ -21,7 +22,8 @@
         "maxValue": 2048
       },
       "default": 1088,
-      "description": "The height of the output image in pixels."
+      "description": "The height of the output image in pixels.",
+      "mapsTo": "imageHeight"
     },
     {
       "displayName": "Image Width",
@@ -32,7 +34,8 @@
         "maxValue": 2048
       },
       "default": 720,
-      "description": "The width of the output image in pixels."
+      "description": "The width of the output image in pixels.",
+      "mapsTo": "imageWidth"
     },
     {
       "displayName": "Batch Size",
@@ -42,7 +45,8 @@
         "minValue": 1
       },
       "default": 1,
-      "description": "The number of images to generate."
+      "description": "The number of images to generate.",
+      "mapsTo": "batchSize"
     },
     {
       "displayName": "--- Output Settings ---",
@@ -71,7 +75,8 @@
       },
       "placeholder": "/path/to/output.png",
       "description": "The full file path to save the output image.",
-      "required": true
+      "required": true,
+      "mapsTo": "outputFilePath"
     },
     {
       "displayName": "Output Binary Property Name",
@@ -85,7 +90,8 @@
           ]
         }
       },
-      "description": "The name to give the output binary property."
+      "description": "The name to give the output binary property.",
+      "mapsTo": "outputBinaryPropertyName"
     }
   ],
   "mappings": {

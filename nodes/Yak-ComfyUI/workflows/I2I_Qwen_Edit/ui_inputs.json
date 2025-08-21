@@ -8,41 +8,42 @@
     },
     {
       "displayName": "Use File Path for Input Image",
-      "name": "inputUseFilePath",
+      "name": "inputImageUseFilePath",
       "type": "boolean",
       "default": true,
       "description": "Use a file path for the input image. Uncheck to use binary data from a previous node."
     },
     {
       "displayName": "File Path",
-      "name": "inputFilePath",
+      "name": "inputImageFilePath",
       "type": "string",
       "default": "",
       "displayOptions": {
         "show": {
-          "inputUseFilePath": [
+          "inputImageUseFilePath": [
             true
           ]
         }
       },
       "placeholder": "/path/to/your/image.png",
       "description": "The full file path to the source image to be edited.",
-      "required": true
+      "required": true,
+      "mapsTo": "inputImage"
     },
     {
       "displayName": "Binary Property Name",
-      "name": "inputBinaryPropertyName",
+      "name": "inputImageBinaryPropertyName",
       "type": "string",
       "default": "data",
       "displayOptions": {
         "show": {
-          "inputUseFilePath": [
+          "inputImageUseFilePath": [
             false
           ]
         }
       },
       "description": "The name of the binary property from a previous node containing the input image.",
-      "required": true
+      "mapsTo": "inputImage"
     },
     {
       "displayName": "Prompt",
@@ -52,19 +53,17 @@
         "rows": 4
       },
       "default": "make him wear a tank top",
-      "placeholder": "Describe the edit you want to make...",
       "description": "The instructions for how to edit the image.",
-      "required": true
+      "required": true,
+      "mapsTo": "prompt"
     },
     {
       "displayName": "Batch Size",
       "name": "batchSize",
       "type": "number",
-      "typeOptions": {
-        "minValue": 1
-      },
       "default": 1,
-      "description": "The number of images to generate."
+      "description": "The number of images to generate.",
+      "mapsTo": "batchSize"
     },
     {
       "displayName": "--- Output Settings ---",
@@ -91,9 +90,8 @@
           ]
         }
       },
-      "placeholder": "/path/to/output.png",
-      "description": "The full file path to save the output image.",
-      "required": true
+      "required": true,
+      "mapsTo": "outputFilePath"
     },
     {
       "displayName": "Output Binary Property Name",
@@ -107,13 +105,14 @@
           ]
         }
       },
-      "description": "The name to give the output binary property."
+      "mapsTo": "outputBinaryPropertyName"
     }
   ],
   "mappings": {
     "inputImage": {
       "nodeId": "117:116",
-      "path": "inputs.image"
+      "path": "inputs.image",
+      "is_media_input": true
     },
     "prompt": {
       "nodeId": "117:76",

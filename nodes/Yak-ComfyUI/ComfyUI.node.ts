@@ -14,6 +14,8 @@ import WebSocket from 'ws';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import { fileToBinary } from '../../SharedFunctions/fileToBinary';
+import { binaryToTempFile } from '../../SharedFunctions/binaryToTempFile';
+
 
 // Manifest structure interfaces for type safety
 interface IWorkflowInManifest {
@@ -27,6 +29,14 @@ interface IWorkflowInManifest {
 interface IManifest {
 	workflows: IWorkflowInManifest[];
 }
+
+// Interface for a UI property that includes our custom 'mapsTo' key
+interface ICustomNodeProperty extends IDataObject {
+	name: string;
+	mapsTo?: string;
+	default?: any;
+}
+
 
 export class ComfyUI implements INodeType {
 	description: INodeTypeDescription = {
@@ -52,7 +62,7 @@ export class ComfyUI implements INodeType {
 					'Choose how to receive the result. Use WebSocket to wait for the result in this workflow, or use a Webhook to trigger a new workflow when the job is done.',
 			},
 			{
-				displayName: 'Use Webhook (Fire and Forget)',
+				displayName: 'Use Webhook',
 				name: 'useWebhook',
 				type: 'boolean',
 				default: false,
@@ -68,102 +78,6 @@ export class ComfyUI implements INodeType {
 				placeholder: 'https://your-n8n-instance/webhook/comfyui-results',
 				description: 'The URL to which the Gatekeeper will POST the final result.',
 				required: true,
-			},
-			{
-				displayName: 'Webhook Output Format',
-				name: 'webhookOutputFormat',
-				type: 'options',
-				displayOptions: { show: { useWebhook: [true] } },
-				options: [
-					{
-						name: 'File Path',
-						value: 'filePath',
-						description: 'The webhook payload will contain the absolute path to the output file.',
-					},
-					{
-						name: 'Binary Data',
-						value: 'binary',
-						description: 'The webhook will receive the raw output file as binary data.',
-					},
-				],
-				default: 'filePath',
-				description: 'Choose the format for the data sent to the webhook.',
-			},
-			{
-				displayName: 'Webhook Output File Path',
-				name: 'webhookOutputFilePath',
-				type: 'string',
-				default: '',
-				displayOptions: {
-					show: {
-						useWebhook: [true],
-						webhookOutputFormat: ['filePath'],
-					},
-				},
-				placeholder: '/data/final_images/output.png',
-				description:
-					'The final, absolute path where the Gatekeeper should save the file before sending the webhook.',
-				required: true,
-			},
-
-			// ----------------------------------
-			//      Output Settings (WebSocket ONLY)
-			// ----------------------------------
-			{
-				displayName: '--- Output Settings (WebSocket only) ---',
-				name: 'outputSettingsNotice',
-				type: 'notice',
-				default: 'These settings apply ONLY if not using a webhook.',
-				displayOptions: { show: { useWebhook: [false] } },
-			},
-			{
-				displayName: 'Output Format',
-				name: 'nodeOutputFormat',
-				type: 'options',
-				displayOptions: { show: { useWebhook: [false] } },
-				options: [
-					{
-						name: 'File Path',
-						value: 'filePath',
-						description: 'Output the absolute path to the generated file.',
-					},
-					{
-						name: 'Binary Data',
-						value: 'binary',
-						description: 'Output the generated file as n8n binary data.',
-					},
-				],
-				default: 'binary',
-				description: 'The desired format for the output from this node.',
-			},
-			{
-				displayName: 'Output File Path',
-				name: 'outputFilePath',
-				type: 'string',
-				default: '',
-				displayOptions: {
-					show: {
-						useWebhook: [false],
-						nodeOutputFormat: ['filePath'],
-					},
-				},
-				placeholder: '/data/my_images/output.png',
-				description:
-					'The full file path where the generated file will be moved after completion.',
-				required: true,
-			},
-			{
-				displayName: 'Output Binary Property Name',
-				name: 'outputBinaryPropertyName',
-				type: 'string',
-				default: 'data',
-				displayOptions: {
-					show: {
-						useWebhook: [false],
-						nodeOutputFormat: ['binary'],
-					},
-				},
-				description: 'The name to give the output binary property.',
 			},
 
 			// ----------------------------------
@@ -186,32 +100,21 @@ export class ComfyUI implements INodeType {
 				description: 'Select the ComfyUI workflow to execute.',
 				required: true,
 			},
-			{
-				displayName: 'Batch Size',
-				name: 'batchSize',
-				type: 'number',
-				typeOptions: { minValue: 1 },
-				default: 1,
-				description: 'How many images to generate for each input item.',
-			},
-			// Dynamic workflow-specific properties are appended here by the constructor
+			// All other properties are now loaded dynamically from the workflow's ui_inputs.json
 		],
 	};
 
 	constructor() {
-		// Preload and append dynamic properties from the manifest at node load time
 		void this.loadAndAppendDynamicProperties();
 	}
 
 	// --- Static Path and File Helpers ---
 
 	private static getNodeDir(): string {
-		// Resolves the path to the directory containing this node file
 		return path.join(__dirname);
 	}
 
 	private static getRepoRoot(): string {
-		// Assumes the node is in /nodes/Yak-ComfyUI/
 		return path.join(__dirname, '..', '..');
 	}
 
@@ -237,18 +140,13 @@ export class ComfyUI implements INodeType {
 
 	methods = {
 		loadOptions: {
-			/**
-			 * Dynamically populates the Workflow dropdown by reading the manifest.json file.
-			 */
 			async getWorkflows(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const manifestPath = path.join(ComfyUI.getNodeDir(), 'manifest.json');
-
 				try {
 					const manifest = await ComfyUI.readJson<IManifest>(manifestPath);
 					if (!manifest.workflows || manifest.workflows.length === 0) {
 						throw new Error('No workflows found in manifest.json.');
 					}
-
 					return manifest.workflows.map((workflow) => ({
 						name: workflow.name,
 						value: workflow.value,
@@ -265,10 +163,6 @@ export class ComfyUI implements INodeType {
 		},
 	};
 
-	/**
-	 * Reads the manifest, finds all UI definition files, and appends their properties
-	 * to the node's description, making them dynamically visible based on workflow selection.
-	 */
 	private async loadAndAppendDynamicProperties() {
 		try {
 			const nodeDir = ComfyUI.getNodeDir();
@@ -277,9 +171,7 @@ export class ComfyUI implements INodeType {
 
 			for (const workflow of manifest.workflows) {
 				const uiInputsPath = path.join(nodeDir, workflow.uiFile);
-
 				if (!(await ComfyUI.pathExists(uiInputsPath))) {
-					// eslint-disable-next-line no-console
 					console.warn(`UI file not found for workflow '${workflow.name}': ${uiInputsPath}`);
 					continue;
 				}
@@ -292,7 +184,9 @@ export class ComfyUI implements INodeType {
 						const dynamicProperty = {
 							...prop,
 							displayOptions: {
+								...(prop.displayOptions || {}),
 								show: {
+									...(prop.displayOptions?.show || {}),
 									selectedWorkflow: [workflow.value],
 								},
 							},
@@ -300,7 +194,6 @@ export class ComfyUI implements INodeType {
 						this.description.properties.push(dynamicProperty);
 					}
 				} catch (e) {
-					// eslint-disable-next-line no-console
 					console.error(
 						`Failed to read or parse ui_inputs.json for workflow '${workflow.name}':`,
 						(e as Error).message,
@@ -308,59 +201,12 @@ export class ComfyUI implements INodeType {
 				}
 			}
 		} catch (error) {
-			// eslint-disable-next-line no-console
 			console.error('Failed to load dynamic properties from manifest:', (error as Error).message);
 		}
 	}
 
 	// --- Workflow Execution Logic ---
 
-	// Utility to set a deep property in an object using a dot-notation path
-	private static setByPath(obj: any, pathStr: string, value: any) {
-		const parts = pathStr.split('.');
-		let ref = obj;
-		for (let i = 0; i < parts.length - 1; i++) {
-			const key = parts[i];
-			if (ref[key] === undefined || ref[key] === null) ref[key] = {};
-			ref = ref[key];
-		}
-		ref[parts[parts.length - 1]] = value;
-	}
-
-	/**
-	 * Applies user inputs from the n8n UI to the raw ComfyUI workflow JSON.
-	 */
-	private static applyUserInputsToWorkflow(
-		workflow: any,
-		userInputs: IDataObject,
-		mappings: Record<string, { nodeId: string; path: string }>,
-		batchSize: number,
-	): any {
-		const modified = JSON.parse(JSON.stringify(workflow));
-
-		for (const [inputName, mapping] of Object.entries(mappings || {})) {
-			const { nodeId, path: pathStr } = mapping as { nodeId: string; path: string };
-			if (!modified[nodeId]) continue;
-
-			// Special handling for batchSize
-			if (inputName === 'batchSize' && pathStr === 'inputs.batch_size') {
-				ComfyUI.setByPath(modified[nodeId], pathStr, batchSize);
-				continue;
-			}
-
-			// Apply other user inputs
-			if (userInputs[inputName] !== undefined) {
-				ComfyUI.setByPath(modified[nodeId], pathStr, userInputs[inputName]);
-			}
-		}
-
-		return modified;
-	}
-
-	/**
-	 * Connects to the Gatekeeper WebSocket and waits for the final result for a given job ID.
-	 * This is a static method to avoid issues with 'this' context inside execute.
-	 */
 	private static async waitForWebSocketResult(
 		executeFunctions: IExecuteFunctions,
 		jobId: string,
@@ -411,34 +257,22 @@ export class ComfyUI implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
+		let tempFiles: string[] = [];
 
-		// Ensure temp directories exist
 		const tempInputPath = ComfyUI.getSharedVolumePath('input');
-		const tempOutputPath = ComfyUI.getSharedVolumePath('output');
 		await fs.mkdir(tempInputPath, { recursive: true });
-		await fs.mkdir(tempOutputPath, { recursive: true });
 
-		// Load manifest once
 		const nodeDir = ComfyUI.getNodeDir();
 		const manifestPath = path.join(nodeDir, 'manifest.json');
 		const manifest = await ComfyUI.readJson<IManifest>(manifestPath);
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			try {
-				// --- Get Parameters ---
 				const selectedWorkflowValue = this.getNodeParameter('selectedWorkflow', itemIndex) as string;
-				const batchSize = this.getNodeParameter('batchSize', itemIndex, 1) as number;
-				const useWebhook = this.getNodeParameter('useWebhook', itemIndex, false) as boolean;
-
 				if (!selectedWorkflowValue) {
-					throw new NodeOperationError(
-						this.getNode(),
-						'No workflow selected. Please select a workflow from the dropdown.',
-						{ itemIndex },
-					);
+					throw new NodeOperationError(this.getNode(), 'No workflow selected.', { itemIndex });
 				}
 
-				// --- Load Workflow Config from Manifest ---
 				const workflowInfo = manifest.workflows.find((w) => w.value === selectedWorkflowValue);
 				if (!workflowInfo) {
 					throw new NodeOperationError(
@@ -448,115 +282,109 @@ export class ComfyUI implements INodeType {
 					);
 				}
 
-				const workflowJsonPath = path.join(nodeDir, workflowInfo.workflowFile);
-				const uiInputsPath = path.join(nodeDir, workflowInfo.uiFile);
-
 				const [workflowFile, uiFile] = await Promise.all([
-					ComfyUI.readJson(workflowJsonPath),
-					ComfyUI.readJson(uiInputsPath),
+					ComfyUI.readJson(path.join(nodeDir, workflowInfo.workflowFile)),
+					ComfyUI.readJson(path.join(nodeDir, workflowInfo.uiFile)),
 				]);
 
-				const workflowTemplate = workflowFile.workflow;
-				const mappings = uiFile.mappings as Record<string, { nodeId: string; path: string }>;
+				const workflowTemplate = workflowFile.workflow || workflowFile;
+				const rawUserInputs: IDataObject = {};
+				const mappedInputs: IDataObject = {};
+				const dynamicProperties = (uiFile.properties || []) as ICustomNodeProperty[];
 
-				// --- Gather Dynamic Inputs ---
-				const userInputs: IDataObject = {};
-				const dynamicProperties = (uiFile.properties || []) as Array<{ name: string; default?: any }>;
+				// Step 1: Gather all raw values from the UI controls
 				for (const prop of dynamicProperties) {
-					userInputs[prop.name] = this.getNodeParameter(prop.name, itemIndex, prop.default ?? '');
+					try {
+						rawUserInputs[prop.name] = this.getNodeParameter(prop.name, itemIndex, prop.default ?? '');
+					} catch (e) {
+						// Ignore if a conditional property is not present
+					}
 				}
 
-				// --- Prepare Workflow and Gatekeeper Payload ---
-				const finalWorkflow = ComfyUI.applyUserInputsToWorkflow(
-					workflowTemplate,
-					userInputs,
-					mappings,
-					batchSize,
-				);
+				// Step 2: Process raw inputs and map them to their final keys using 'mapsTo'
+				for (const prop of dynamicProperties) {
+					if (prop.mapsTo) {
+						const mapsToKey = prop.mapsTo;
+						let valueToMap: any;
 
+						// Handle the file path vs. binary data toggle logic
+						if (prop.name.endsWith('FilePath')) {
+							const prefix = prop.name.replace('FilePath', '');
+							if (rawUserInputs[`${prefix}UseFilePath`] === true) {
+								valueToMap = rawUserInputs[prop.name];
+							}
+						} else if (prop.name.endsWith('BinaryPropertyName')) {
+							const prefix = prop.name.replace('BinaryPropertyName', '');
+							if (rawUserInputs[`${prefix}UseFilePath`] === false) {
+								const binaryPropName = rawUserInputs[prop.name] as string;
+								const tempFilePath = await binaryToTempFile(this, itemIndex, binaryPropName, tempInputPath);
+								tempFiles.push(tempFilePath);
+								valueToMap = tempFilePath;
+							}
+						} else {
+							// For all other properties, map their value directly
+							valueToMap = rawUserInputs[prop.name];
+						}
+
+						// If a value was determined, add it to our clean, mapped inputs object
+						if (valueToMap !== undefined) {
+							mappedInputs[mapsToKey] = valueToMap;
+						}
+					}
+				}
+
+
+				const useWebhook = this.getNodeParameter('useWebhook', itemIndex, false) as boolean;
 				const gatekeeperPayload: IDataObject = {
 					n8n_execution_id: this.getExecutionId(),
 					callback_type: useWebhook ? 'webhook' : 'websocket',
-					workflow_json: finalWorkflow,
+					workflow_template: workflowTemplate,
+					user_inputs: mappedInputs, // Send the clean, mapped inputs
+					mappings: uiFile.mappings,
 				};
 
 				if (useWebhook) {
 					gatekeeperPayload.callback_url = this.getNodeParameter('webhookUrl', itemIndex) as string;
-					gatekeeperPayload.output_format = this.getNodeParameter(
-						'webhookOutputFormat',
-						itemIndex,
-						'filePath',
-					) as string;
-					if (gatekeeperPayload.output_format === 'filePath') {
-						gatekeeperPayload.output_path = this.getNodeParameter(
-							'webhookOutputFilePath',
-							itemIndex,
-						) as string;
-					}
 				}
 
-				// --- Submit Job to Gatekeeper ---
 				const initialOptions: IHttpRequestOptions = {
 					method: 'POST',
 					url: 'http://127.0.0.1:8189/execute',
 					body: gatekeeperPayload,
 					json: true,
-					timeout: 120000, // 2 minutes for initial submission
+					timeout: 120000,
 				};
 
-				const initialResponse = (await this.helpers.httpRequest(initialOptions)) as {
-					job_id: string;
-				};
-				const jobId = initialResponse.job_id;
+				const { job_id: jobId } = (await this.helpers.httpRequest(initialOptions)) as { job_id: string };
 
-				// --- Handle Response ---
 				if (useWebhook) {
-					// Fire-and-forget mode
 					returnData.push({
 						json: { status: 'submitted', job_id: jobId, workflow: selectedWorkflowValue },
 						pairedItem: { item: itemIndex },
 					});
-					continue; // Move to the next item
+					continue;
 				}
 
-				// WebSocket mode: Wait for completion
 				const finalResult = await ComfyUI.waitForWebSocketResult(this, jobId);
 
-				// --- Process WebSocket Result ---
-				const nodeOutputFormat = this.getNodeParameter(
-					'nodeOutputFormat',
-					itemIndex,
-					'binary',
-				) as string;
-
 				const processResult = async (result: any) => {
-					const tempFilePath = result.data; // Gatekeeper ALWAYS returns a temp file path
+					const tempFilePath = result.data;
 					if (!tempFilePath) {
-						throw new NodeOperationError(this.getNode(), 'Gatekeeper did not return a valid file path.', {
-							itemIndex,
-						});
+						throw new NodeOperationError(this.getNode(), 'Gatekeeper did not return a valid file path.', { itemIndex });
 					}
 
-					if (nodeOutputFormat === 'filePath') {
-						const finalPath = this.getNodeParameter('outputFilePath', itemIndex) as string;
+					const outputAsFilePath = mappedInputs.outputAsFilePath as boolean;
+
+					if (outputAsFilePath) {
+						const finalPath = mappedInputs.outputFilePath as string;
 						await fs.mkdir(path.dirname(finalPath), { recursive: true });
 						await fs.rename(tempFilePath, finalPath);
 						return { json: { filePath: finalPath }, pairedItem: { item: itemIndex } };
 					} else {
-						// 'binary' format
-						const propertyName = this.getNodeParameter(
-							'outputBinaryPropertyName',
-							itemIndex,
-							'data',
-						) as string;
+						const propertyName = mappedInputs.outputBinaryPropertyName as string;
 						const binaryData = await fileToBinary(tempFilePath, propertyName, this.helpers);
-						// Clean up the temp file after converting to binary
 						await fs.unlink(tempFilePath);
-						return {
-							json: {},
-							binary: { [propertyName]: binaryData },
-							pairedItem: { item: itemIndex },
-						};
+						return { json: {}, binary: { [propertyName]: binaryData }, pairedItem: { item: itemIndex } };
 					}
 				};
 
@@ -573,6 +401,11 @@ export class ComfyUI implements INodeType {
 					continue;
 				}
 				throw error;
+			} finally {
+				for (const file of tempFiles) {
+					await fs.unlink(file).catch(e => console.error(`Failed to delete temp file: ${file}`, e));
+				}
+				tempFiles = [];
 			}
 		}
 
