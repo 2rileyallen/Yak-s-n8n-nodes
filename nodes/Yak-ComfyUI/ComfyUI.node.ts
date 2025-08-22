@@ -307,30 +307,42 @@ export class ComfyUI implements INodeType {
 						const mapsToKey = prop.mapsTo;
 						let valueToMap: any;
 
-						// Handle the file path vs. binary data toggle logic
-						if (prop.name.endsWith('FilePath')) {
+						// This logic is now generic and robust, handling all cases correctly.
+						if (prop.name.endsWith('UseFilePath')) {
+							// This is a boolean toggle; its value is used by other properties but not mapped itself.
+							continue;
+						} else if (prop.name.endsWith('FilePath')) {
 							const prefix = prop.name.replace('FilePath', '');
-							if (rawUserInputs[`${prefix}UseFilePath`] === true) {
+							const useFilePathToggle = rawUserInputs[`${prefix}UseFilePath`] as boolean;
+							if (useFilePathToggle === true) {
 								valueToMap = rawUserInputs[prop.name];
 							}
 						} else if (prop.name.endsWith('BinaryPropertyName')) {
 							const prefix = prop.name.replace('BinaryPropertyName', '');
-							if (rawUserInputs[`${prefix}UseFilePath`] === false) {
-								const binaryPropName = rawUserInputs[prop.name] as string;
-								const tempFilePath = await binaryToTempFile(this, itemIndex, binaryPropName, tempInputPath);
-								tempFiles.push(tempFilePath);
-								valueToMap = tempFilePath;
+							const useFilePathToggle = rawUserInputs[`${prefix}UseFilePath`] as boolean;
+
+							if (useFilePathToggle === false) {
+								// This logic is for INPUT media files that need conversion
+								if (prop.name.startsWith('input')) {
+									const binaryPropName = rawUserInputs[prop.name] as string;
+									const tempFilePath = await binaryToTempFile(this, itemIndex, binaryPropName, tempInputPath);
+									tempFiles.push(tempFilePath);
+									valueToMap = tempFilePath;
+								}
 							}
 						} else {
-							// For all other properties, map their value directly
+							// For all other properties (prompts, numbers, etc.), map their value directly.
 							valueToMap = rawUserInputs[prop.name];
 						}
 
-						// If a value was determined, add it to our clean, mapped inputs object
 						if (valueToMap !== undefined) {
 							mappedInputs[mapsToKey] = valueToMap;
 						}
 					}
+				}
+				// **FIXED**: Separately and reliably map the output binary property name if needed.
+				if (rawUserInputs.outputAsFilePath === false) {
+					mappedInputs.outputBinaryPropertyName = rawUserInputs.outputBinaryPropertyName;
 				}
 
 
