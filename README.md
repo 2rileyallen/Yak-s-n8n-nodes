@@ -99,51 +99,51 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
 
 The Yak-ComfyUI node requires a local ComfyUI installation, a dedicated Conda environment, and a managed set of models and custom nodes.
 
-1.  **Install ComfyUI:**
-    * Navigate to the `Software/` directory inside this repository.
-    * Clone the official ComfyUI repository:
-        ```bash
-        git clone [https://github.com/comfyanonymous/ComfyUI.git](https://github.com/comfyanonymous/ComfyUI.git)
-        ```
+1.  **Install ComfyUI:**
+    * Navigate to the `Software/` directory inside this repository.
+    * Clone the official ComfyUI repository:
+        ```bash
+        git clone [https://github.com/comfyanonymous/ComfyUI.git](https://github.com/comfyanonymous/ComfyUI.git)
+        ```
 
-2.  **Create Conda Environment:**
-    * Open **Anaconda Prompt**.
-    * Create and activate the dedicated environment:
-        ```bash
-        conda create --name yak_comfyui_env python=3.11 -y
-        conda activate yak_comfyui_env
-        ```
+2.  **Create Conda Environment:**
+    * Open **Anaconda Prompt**.
+    * Create and activate the dedicated environment:
+        ```bash
+        conda create --name yak_comfyui_env python=3.11 -y
+        conda activate yak_comfyui_env
+        ```
 
-3.  **Install Python Dependencies:**
-    * Install dependencies for the Gatekeeper and management scripts:
-        ```bash
-        pip install "fastapi[all]" sqlalchemy httpx websockets requests tqdm gdown
-        ```
-    * Install ComfyUI's dependencies into the same environment:
-        ```bash
-        pip install -r Software/ComfyUI/requirements.txt
-        ```
+3.  **Install Python Dependencies:**
+    * Install dependencies for the Gatekeeper and management scripts:
+        ```bash
+        pip install "fastapi[all]" sqlalchemy httpx websockets requests tqdm gdown
+        ```
+    * Install ComfyUI's dependencies into the same environment:
+        ```bash
+        pip install -r Software/ComfyUI/requirements.txt
+        ```
 
-4.  **Configure Model Paths:**
-    * Find the `extra_model_paths.yaml.example` file inside `nodes/Yak-ComfyUI/`.
-    * Copy this file into your `Software/ComfyUI/` directory and rename it to `extra_model_paths.yaml`.
-    * Open the new file and edit the placeholder paths to match your system's configuration.
+4.  **Configure Model Paths:**
+    * Find the `extra_model_paths.yaml.example` file inside `nodes/Yak-ComfyUI/`.
+    * Copy this file into your `Software/ComfyUI/` directory and rename it to `extra_model_paths.yaml`.
+    * Open the new file and edit the placeholder paths to match your system's configuration.
 
-5.  **Synchronize Environment:**
-    * Run the management scripts to download all required models and custom nodes for the included workflows.
-    * Navigate to the `nodes/Yak-ComfyUI/` directory and run the following batch files:
-        ```bash
-        manage_models.bat
-        manage_custom_nodes.bat
-        ```
+5.  **Synchronize Environment:**
+    * Run the management scripts to download all required models and custom nodes for the included workflows.
+    * Navigate to the `nodes/Yak-ComfyUI/` directory and run the following batch files:
+        ```bash
+        manage_models.bat
+        manage_custom_nodes.bat
+        ```
 
-6.  **Launch Services:**
-    * The `master_start.bat` file in the root directory is used to launch all services (ComfyUI, Gatekeeper, n8n).
-    * Before running it for the first time, open `master_start.bat` and edit the `PROJECT_PATH` and `CONDA_PATH` variables at the top to match your system.
-    * Run the script to start all services in the background:
-        ```bash
-        master_start.bat
-        ```
+6.  **Launch Services:**
+    * The `master_start.bat` file in the root directory is used to launch all services (ComfyUI, Gatekeeper, n8n).
+    * Before running it for the first time, open `master_start.bat` and edit the `PROJECT_PATH` and `CONDA_PATH` variables at the top to match your system.
+    * Run the script to start all services in the background:
+        ```bash
+        master_start.bat
+        ```
 
 ## Using these nodes
 
