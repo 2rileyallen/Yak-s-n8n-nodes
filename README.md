@@ -30,7 +30,7 @@ You need the following installed on your development machine:
 
 Chatterbox TTS requires its own Conda environment with PyTorch, torchaudio, and ffmpeg support. Complete these steps before using the **Yak‑ChatterboxTTS** node:
 
-1.  Install [Miniconda](https://docs.conda.io/en/main/miniconda.html) for Windows if you haven’t already.
+1.  Install [Miniconda](https://docs.conda.io/en/main/miniconda.html) for Windows if you haven't already.
 2.  Open **Anaconda Prompt** (or PowerShell with Conda initialized).
 3.  Create and activate a dedicated environment:
     ```bash
@@ -72,10 +72,10 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
 4.  **Install Python Dependencies:**
     * Install the specific PyTorch version for CUDA 12.1:
         ```bash
-        pip install torch==2.1.0 torchvision==0.16.0+cu121 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
+        pip install torch==2.1.0 torchvision==0.16.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
         ```
         ```bash
-        pip install torchaudio==2.1.0 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
+        pip install torchaudio==2.1.0 --extra-index-url https://download.pytorch.org/whl/cu121
         ```
     * Install the dependencies for the Gatekeeper server:
         ```bash
@@ -90,9 +90,59 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
         ```bash
         pip install openmim
         pip install mmengine
-        pip install mmcv==2.1.0 -f [https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html](https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html)
+        pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html
         pip install mmdet==3.2.0
         pip install mmpose==1.3.1
+        ```
+
+### Additional Setup for ComfyUI (Windows with NVIDIA GPU)
+
+The Yak-ComfyUI node requires a local ComfyUI installation, a dedicated Conda environment, and a managed set of models and custom nodes.
+
+1.  **Install ComfyUI:**
+    * Navigate to the `Software/` directory inside this repository.
+    * Clone the official ComfyUI repository:
+        ```bash
+        git clone https://github.com/comfyanonymous/ComfyUI.git
+        ```
+
+2.  **Create Conda Environment:**
+    * Open **Anaconda Prompt**.
+    * Create and activate the dedicated environment:
+        ```bash
+        conda create --name yak_comfyui_env python=3.11 -y
+        conda activate yak_comfyui_env
+        ```
+
+3.  **Install Python Dependencies:**
+    * Install dependencies for the Gatekeeper and management scripts:
+        ```bash
+        pip install "fastapi[all]" sqlalchemy httpx websockets requests tqdm gdown
+        ```
+    * Install ComfyUI's dependencies into the same environment:
+        ```bash
+        pip install -r Software/ComfyUI/requirements.txt
+        ```
+
+4.  **Configure Model Paths:**
+    * Find the `extra_model_paths.yaml.example` file inside `nodes/Yak-ComfyUI/`.
+    * Copy this file into your `Software/ComfyUI/` directory and rename it to `extra_model_paths.yaml`.
+    * Open the new file and edit the placeholder paths to match your system's configuration.
+
+5.  **Synchronize Environment:**
+    * Run the management scripts to download all required models and custom nodes for the included workflows.
+    * Navigate to the `nodes/Yak-ComfyUI/` directory and run the following batch files:
+        ```bash
+        manage_models.bat
+        manage_custom_nodes.bat
+        ```
+
+6.  **Launch Services:**
+    * The `master_start.bat` file in the root directory is used to launch all services (ComfyUI, Gatekeeper, n8n).
+    * Before running it for the first time, open `master_start.bat` and edit the `PROJECT_PATH` and `CONDA_PATH` variables at the top to match your system.
+    * Run the script to start all services in the background:
+        ```bash
+        master_start.bat
         ```
 
 ## Using these nodes
@@ -101,7 +151,7 @@ These are the basic steps for working with Yak's node package. For detailed guid
 
 1.  Clone this repository:
     ```bash
-    git clone [https://github.com/2rileyallen/Yak-s-n8n-nodes.git](https://github.com/2rileyallen/Yak-s-n8n-nodes.git)
+    git clone https://github.com/2rileyallen/Yak-s-n8n-nodes.git
     ```
 2.  Navigate into the project:
     ```bash
