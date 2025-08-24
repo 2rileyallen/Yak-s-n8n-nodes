@@ -1,0 +1,28 @@
+@echo off
+setlocal EnableDelayedExpansion
+
+:: --- Set the current directory to the script's location ---
+cd /d "%~dp0"
+
+rem ######################################################################
+rem ### Yak-s-N8N-nodes Gatekeeper Startup Script for Windows          ###
+rem ### This script activates the correct Conda environment and        ###
+rem ### launches the ComfyUI Gatekeeper server.                       ###
+rem ######################################################################
+
+echo Activating Conda environment: yak_comfyui_env
+rem Use 'call' to ensure the script continues after this command
+call conda activate yak_comfyui_env
+
+echo.
+echo Starting Gatekeeper server...
+echo (To stop the server, press CTRL+C in this window)
+echo.
+
+rem Run the Gatekeeper Python script using its relative path from the root
+python gatekeeper.py
+
+rem Keep the window open after the server is stopped
+echo.
+echo Gatekeeper server has been stopped. Press any key to close this window.
+pause > nul

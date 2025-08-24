@@ -1,6 +1,9 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+:: --- Set the current directory to the script's location ---
+cd /d "%~dp0"
+
 rem ######################################################################
 rem ### Yak-s-N8N-nodes Gatekeeper Startup Script for Windows          ###
 rem ### This script activates the correct Conda environment and        ###
@@ -17,7 +20,7 @@ echo (To stop the server, press CTRL+C in this window)
 echo.
 
 rem Run the Gatekeeper Python script using its relative path from the root
-python nodes/Yak-MuseTalk/gatekeeper.py
+python gatekeeper.py
 
 rem Keep the window open after the server is stopped
 echo.
