@@ -74,6 +74,7 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
         ```bash
         pip install torch==2.1.0 torchvision==0.16.0+cu121 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
         ```
+        ```bash
         pip install torchaudio==2.1.0 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
         ```
     * Install the dependencies for the Gatekeeper server:
