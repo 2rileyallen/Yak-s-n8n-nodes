@@ -95,9 +95,6 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
         pip install mmpose==1.3.1
         ```
 
-5.  **Start the Gatekeeper:**
-    * Once setup is complete, run the `start_gatekeeper.bat` file located in the root of the repository to start the server. The N8N node requires this server to be running to process jobs.
-
 ## Using these nodes
 
 These are the basic steps for working with Yak's node package. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
