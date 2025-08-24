@@ -59,7 +59,7 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
 
 2.  **Download Models:**
     * The MuseTalk models are required for the node to function. Download the `models` folder from the following link and place it inside the `Software/MuseTalk/` directory.
-    * **Google Drive Link:** `[https://drive.google.com/drive/folders/1k0AGaj0mn6ZAtEs96-eo01ExSyA78yTR?usp=drive_link]`
+    * **Google Drive Link:** `https://drive.google.com/drive/folders/1k0AGaj0mn6ZAtEs96-eo01ExSyA78yTR?usp=drive_link`
 
 3.  **Create Conda Environment:**
     * Open **Anaconda Prompt** (or PowerShell with Conda initialized).
