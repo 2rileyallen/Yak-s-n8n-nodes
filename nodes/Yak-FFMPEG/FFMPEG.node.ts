@@ -285,13 +285,30 @@ export class FFMPEG implements INodeType {
                     pythonProcess.stdout.on('data', (data) => (stdout += data.toString()));
                     pythonProcess.stderr.on('data', (data) => (stderr += data.toString()));
                     pythonProcess.on('close', (code) => {
-                        if (code !== 0)
+                        if (code !== 0) {
+                            // --- IMPROVED ERROR HANDLING ---
+                            // The script failed. First, try to parse stdout for a detailed JSON error from Python.
+                            try {
+                                const potentialJsonError = JSON.parse(stdout.trim());
+                                if (potentialJsonError && potentialJsonError.error) {
+                                    // We got a detailed error message from the script!
+                                    const command = potentialJsonError.command ? `\nCommand: ${potentialJsonError.command}` : '';
+                                    const errorMessage = `Python script error: ${potentialJsonError.error}${command}`;
+                                    return reject(new NodeOperationError(this.getNode(), errorMessage));
+                                }
+                            } catch (e) {
+                                // stdout was not a valid JSON error message, so we will fall back to stderr.
+                            }
+                            
+                            // Fallback to using stderr or the exit code if stdout didn't provide a clear error.
                             return reject(
                                 new NodeOperationError(
                                     this.getNode(),
-                                    `Script failed: ${stderr || `Exited with code ${code}`}`,
+                                    `Script failed: ${stderr.trim() || `Exited with code ${code}`}`,
                                 ),
                             );
+                        }
+                        // If code is 0, the script succeeded.
                         resolve(stdout.trim());
                     });
                     pythonProcess.on('error', (err) =>

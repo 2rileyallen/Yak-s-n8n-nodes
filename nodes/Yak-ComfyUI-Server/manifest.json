@@ -1,0 +1,10 @@
+{
+  "workflows": [
+    {
+      "name": "Infinite Talk",
+      "value": "InfiniteTalk",
+      "uiFile": "workflows/InfiniteTalk/ui_inputs.json",
+      "workflowFile": "workflows/InfiniteTalk/workflow.json"
+    }
+  ]
+}

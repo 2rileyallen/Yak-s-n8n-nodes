@@ -20,6 +20,7 @@
   },
   "main": "index.js",
   "scripts": {
+    "clean": "npx rimraf dist",
     "build": "npx rimraf dist && tsc && npm run postbuild:assets",
     "prepare": "npm run build",
     "postbuild:assets": "npx cpy \"nodes/**/*.!(ts)\" dist/nodes --parents",
@@ -34,9 +35,12 @@
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "credentials": [],
+    "credentials": [
+      "dist/credentials/ComfyApi.credentials.js"
+    ],
     "nodes": [
       "dist/nodes/Yak-ChatterboxTTS/ChatterboxTTS.node.js",
+      "dist/nodes/Yak-ComfyUI-Server/ComfyUI_Server.node.js",
       "dist/nodes/Yak-ComfyUI/ComfyUI.node.js",
       "dist/nodes/Yak-FFMPEG/FFMPEG.node.js",
       "dist/nodes/Yak-MuseTalk/MuseTalk.node.js",
@@ -60,6 +64,8 @@
     "n8n-workflow": "*"
   },
   "dependencies": {
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "axios": "^1.7.2",
+    "form-data": "^4.0.0"
   }
 }

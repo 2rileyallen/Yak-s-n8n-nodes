@@ -1,13 +1,6 @@
 {
   "workflows": [
     {
-      "name": "Basic Image Generation",
-      "value": "basic-image-generation",
-      "uiFile": "workflows/basic-image-generation/ui_inputs.json",
-      "workflowFile": "workflows/basic-image-generation/workflow.json",
-      "dependenciesFile": "workflows/basic-image-generation/dependencies.json"
-    },
-    {
       "name": "T2I Qwen",
       "value": "T2I_Qwen",
       "uiFile": "workflows/T2I_Qwen/ui_inputs.json",
