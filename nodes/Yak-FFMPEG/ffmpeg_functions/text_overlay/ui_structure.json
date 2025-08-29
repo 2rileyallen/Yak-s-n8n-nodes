@@ -57,10 +57,10 @@
             "default": ""
         },
         {
-            "displayName": "Input Video",
-            "name": "inputVideo",
-            "type": "string",
-            "default": "",
+            "displayName": "Use Input Video File Path",
+            "name": "inputVideoUseFilePath",
+            "type": "boolean",
+            "default": true,
             "displayOptions": {
                 "show": {
                     "outputAsTransparentOverlay": [
@@ -68,8 +68,44 @@
                     ]
                 }
             },
+            "description": "Toggle to use a direct file path for the input video. Uncheck to use binary data from a previous node."
+        },
+        {
+            "displayName": "Input Video File Path",
+            "name": "inputVideoFilePath",
+            "type": "string",
+            "default": "",
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        false
+                    ],
+                    "inputVideoUseFilePath": [
+                        true
+                    ]
+                }
+            },
             "placeholder": "/path/to/source_video.mp4",
-            "description": "The source video to burn the text onto."
+            "description": "The source video to burn the text onto.",
+            "required": true
+        },
+        {
+            "displayName": "Input Video Binary Property",
+            "name": "inputVideoBinaryPropertyName",
+            "type": "string",
+            "default": "data",
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        false
+                    ],
+                    "inputVideoUseFilePath": [
+                        false
+                    ]
+                }
+            },
+            "description": "The name of the binary property containing the input video data.",
+            "required": true
         },
         {
             "displayName": "Video Width",

@@ -57,10 +57,10 @@
             "default": ""
         },
         {
-            "displayName": "Input Video",
-            "name": "inputVideo",
-            "type": "string",
-            "default": "",
+            "displayName": "Use Input Video File Path",
+            "name": "inputVideoUseFilePath",
+            "type": "boolean",
+            "default": true,
             "displayOptions": {
                 "show": {
                     "outputAsTransparentOverlay": [
@@ -68,8 +68,44 @@
                     ]
                 }
             },
+            "description": "Toggle to use a direct file path for the input video. Uncheck to use binary data from a previous node."
+        },
+        {
+            "displayName": "Input Video File Path",
+            "name": "inputVideoFilePath",
+            "type": "string",
+            "default": "",
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        false
+                    ],
+                    "inputVideoUseFilePath": [
+                        true
+                    ]
+                }
+            },
             "placeholder": "/path/to/source_video.mp4",
-            "description": "The source video to burn captions onto."
+            "description": "The source video to burn the captions onto.",
+            "required": true
+        },
+        {
+            "displayName": "Input Video Binary Property",
+            "name": "inputVideoBinaryPropertyName",
+            "type": "string",
+            "default": "data",
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        false
+                    ],
+                    "inputVideoUseFilePath": [
+                        false
+                    ]
+                }
+            },
+            "description": "The name of the binary property containing the input video data.",
+            "required": true
         },
         {
             "displayName": "Video Width",
@@ -100,13 +136,23 @@
             "description": "The height of the transparent video canvas in pixels."
         },
         {
-            "displayName": "Subtitle File (.srt, .ass)",
-            "name": "subtitleFile",
-            "type": "string",
+            "displayName": "Transcription Data",
+            "name": "transcriptionData",
+            "type": "json",
             "default": "",
-            "required": true,
-            "placeholder": "/path/to/captions.srt",
-            "description": "The timed text file containing the captions."
+            "placeholder": "{{ $json.words }}",
+            "description": "The JSON output from a Whisper transcription node containing word-level timestamps.",
+            "required": true
+        },
+        {
+            "displayName": "Maximum Words per Line",
+            "name": "maxWordsPerLine",
+            "type": "number",
+            "typeOptions": {
+                "minValue": 1
+            },
+            "default": 7,
+            "description": "The maximum number of words to group into a single caption line."
         },
         {
             "displayName": "--- Style & Position ---",
@@ -119,63 +165,78 @@
             "name": "aspectRatio",
             "type": "options",
             "options": [
-                { "name": "Portrait (9:16)", "value": "9:16" },
-                { "name": "Landscape (16:9)", "value": "16:9" }
+                {
+                    "name": "Portrait (9:16)",
+                    "value": "9:16"
+                },
+                {
+                    "name": "Landscape (16:9)",
+                    "value": "16:9"
+                }
             ],
             "default": "9:16",
-            "description": "Determines the available preset positioning options."
+            "description": "Select the aspect ratio to determine positioning presets."
         },
         {
             "displayName": "Font Family",
             "name": "fontFamily",
             "type": "options",
             "options": [
-                { "name": "Anton", "value": "Anton" },
-                { "name": "Asimovian", "value": "Asimovian" },
-                { "name": "Bebas Neue", "value": "Bebas Neue" },
-                { "name": "Caprasimo", "value": "Caprasimo" },
-                { "name": "Libertinus Keyboard", "value": "Libertinus Keyboard" },
-                { "name": "Libre Barcode 39 Text", "value": "Libre Barcode 39 Text" },
-                { "name": "Roboto", "value": "Roboto" },
-                { "name": "Silkscreen", "value": "Silkscreen" },
-                { "name": "Story Script", "value": "Story Script" },
-                { "name": "Trade Winds", "value": "Trade Winds" }
+                { "name": "Anton", "value": "anton" },
+                { "name": "Asimovian", "value": "asimovian" },
+                { "name": "Bebas Neue", "value": "bebasNeue" },
+                { "name": "Caprasimo", "value": "caprasimo" },
+                { "name": "Libertinus Keyboard", "value": "libertinusKeyboard" },
+                { "name": "Libre Barcode 39 Text", "value": "libreBarcode" },
+                { "name": "Roboto", "value": "roboto" },
+                { "name": "Silkscreen", "value": "silkscreen" },
+                { "name": "Story Script", "value": "storyScript" },
+                { "name": "Trade Winds", "value": "tradeWinds" }
             ],
-            "default": "Roboto",
-            "description": "Select the font for the text. Font files must be placed in the shared fonts folder."
+            "default": "roboto",
+            "description": "Select the font for the text."
         },
         {
             "displayName": "Font Size",
             "name": "fontSize",
             "type": "number",
+            "typeOptions": {
+                "minValue": 10,
+                "maxValue": 400
+            },
             "default": 48,
-            "description": "The size of the caption text."
+            "description": "Set the font size in pixels."
         },
         {
             "displayName": "Font Color",
             "name": "fontColor",
             "type": "color",
-            "default": "#FFFFFF"
+            "default": "#FFFFFF",
+            "description": "The main color of the text."
         },
         {
             "displayName": "Font Outline Color",
             "name": "fontOutlineColor",
             "type": "color",
-            "default": "#000000"
+            "default": "#000000",
+            "description": "The color of the border around the text."
         },
         {
             "displayName": "Outline Thickness",
             "name": "outlineThickness",
             "type": "number",
+            "typeOptions": {
+                "minValue": 0
+            },
             "default": 2,
-            "description": "The thickness of the text border."
+            "description": "The thickness of the text border in pixels."
         },
         {
             "displayName": "Use Custom Coordinates",
             "name": "useCustomCoordinates",
             "type": "boolean",
             "default": false,
-            "description": "Toggle to switch between simple presets and advanced X/Y positioning."
+            "description": "Toggle to manually set X/Y coordinates instead of using presets."
         },
         {
             "displayName": "Preset Position (Portrait)",
@@ -183,8 +244,12 @@
             "type": "options",
             "displayOptions": {
                 "show": {
-                    "aspectRatio": [ "9:16" ],
-                    "useCustomCoordinates": [ false ]
+                    "useCustomCoordinates": [
+                        false
+                    ],
+                    "aspectRatio": [
+                        "9:16"
+                    ]
                 }
             },
             "options": [
@@ -200,8 +265,12 @@
             "type": "options",
             "displayOptions": {
                 "show": {
-                    "aspectRatio": [ "16:9" ],
-                    "useCustomCoordinates": [ false ]
+                    "useCustomCoordinates": [
+                        false
+                    ],
+                    "aspectRatio": [
+                        "16:9"
+                    ]
                 }
             },
             "options": [
@@ -222,9 +291,13 @@
             "name": "xCoordinate",
             "type": "number",
             "displayOptions": {
-                "show": { "useCustomCoordinates": [ true ] }
+                "show": {
+                    "useCustomCoordinates": [
+                        true
+                    ]
+                }
             },
-            "default": 0,
+            "default": 10,
             "description": "Horizontal position in pixels from the left edge."
         },
         {
@@ -232,10 +305,15 @@
             "name": "yCoordinate",
             "type": "number",
             "displayOptions": {
-                "show": { "useCustomCoordinates": [ true ] }
+                "show": {
+                    "useCustomCoordinates": [
+                        true
+                    ]
+                }
             },
-            "default": 0,
+            "default": 10,
             "description": "Vertical position in pixels from the top edge."
         }
     ]
 }
+
