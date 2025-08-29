@@ -35,9 +35,7 @@
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/ComfyApi.credentials.js"
-    ],
+    "credentials": [],
     "nodes": [
       "dist/nodes/Yak-ChatterboxTTS/ChatterboxTTS.node.js",
       "dist/nodes/Yak-ComfyUI-Server/ComfyUI_Server.node.js",

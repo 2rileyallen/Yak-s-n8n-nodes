@@ -72,10 +72,10 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
 4.  **Install Python Dependencies:**
     * Install the specific PyTorch version for CUDA 12.1:
         ```bash
-        pip install torch==2.1.0 torchvision==0.16.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
+        pip install torch==2.1.0 torchvision==0.16.0+cu121 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
         ```
         ```bash
-        pip install torchaudio==2.1.0 --extra-index-url https://download.pytorch.org/whl/cu121
+        pip install torchaudio==2.1.0 --extra-index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
         ```
     * Install the dependencies for the Gatekeeper server:
         ```bash
@@ -90,7 +90,7 @@ The Yak-MuseTalk node requires a specific Conda environment and a separate downl
         ```bash
         pip install openmim
         pip install mmengine
-        pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html
+        pip install mmcv==2.1.0 -f [https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html](https://download.openmmlab.com/mmcv/dist/cu121/torch2.1.0/index.html)
         pip install mmdet==3.2.0
         pip install mmpose==1.3.1
         ```
@@ -103,7 +103,7 @@ The Yak-ComfyUI node requires a local ComfyUI installation, a dedicated Conda en
     * Navigate to the `Software/` directory inside this repository.
     * Clone the official ComfyUI repository:
         ```bash
-        git clone https://github.com/comfyanonymous/ComfyUI.git
+        git clone [https://github.com/comfyanonymous/ComfyUI.git](https://github.com/comfyanonymous/ComfyUI.git)
         ```
 
 2.  **Create Conda Environment:**
@@ -145,13 +145,36 @@ The Yak-ComfyUI node requires a local ComfyUI installation, a dedicated Conda en
         master_start.bat
         ```
 
+### Additional Setup for WhisperSTT
+
+The WhisperSTT node requires its own Conda environment to manage PyTorch and the Whisper library. Complete these steps before using the **Yak‑WhisperSTT** node:
+
+1.  Install [Miniconda](https://docs.conda.io/en/main/miniconda.html) if you haven't already.
+2.  Open **Anaconda Prompt** (or PowerShell with Conda initialized).
+3.  Create and activate the dedicated environment:
+    ```bash
+    conda create --name yak_whisper_env python=3.11 -y
+    conda activate yak_whisper_env
+    ```
+4.  Install the required Python package:
+    ```bash
+    pip install openai-whisper
+    ```
+5.  Ensure FFmpeg is installed system‑wide and available in PATH (see general Prerequisites above).
+6.  Verify installation:
+    ```bash
+    python -c "import whisper; print('Whisper environment is ready!')"
+    ```
+
+This ensures the Yak‑WhisperSTT node can call the Python backend correctly.
+
 ## Using these nodes
 
 These are the basic steps for working with Yak's node package. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
 
 1.  Clone this repository:
     ```bash
-    git clone https://github.com/2rileyallen/Yak-s-n8n-nodes.git
+    git clone [https://github.com/2rileyallen/Yak-s-n8n-nodes.git](https://github.com/2rileyallen/Yak-s-n8n-nodes.git)
     ```
 2.  Navigate into the project:
     ```bash
