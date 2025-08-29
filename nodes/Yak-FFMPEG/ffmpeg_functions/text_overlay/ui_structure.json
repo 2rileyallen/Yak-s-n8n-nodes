@@ -1,0 +1,257 @@
+{
+    "properties": [
+        {
+            "displayName": "--- Output Settings ---",
+            "name": "outputSettingsNotice",
+            "type": "notice",
+            "default": ""
+        },
+        {
+            "displayName": "Output as Transparent Overlay",
+            "name": "outputAsTransparentOverlay",
+            "type": "boolean",
+            "default": true,
+            "description": "When true, creates a video with a transparent background containing only the text. When false, burns text onto an existing input video."
+        },
+        {
+            "displayName": "Output as File Path",
+            "name": "outputAsFilePath",
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to save the output to a specified file path. Uncheck to output as binary data."
+        },
+        {
+            "displayName": "Output File Path",
+            "name": "outputFilePath",
+            "type": "string",
+            "default": "",
+            "displayOptions": {
+                "show": {
+                    "outputAsFilePath": [
+                        true
+                    ]
+                }
+            },
+            "placeholder": "/path/to/output_overlay.mov",
+            "description": "The full file path to save the output media. Use .mov for transparency.",
+            "required": true
+        },
+        {
+            "displayName": "Output Binary Property Name",
+            "name": "outputBinaryPropertyName",
+            "type": "string",
+            "default": "data",
+            "displayOptions": {
+                "show": {
+                    "outputAsFilePath": [
+                        false
+                    ]
+                }
+            },
+            "description": "The name to give the output binary property."
+        },
+        {
+            "displayName": "--- Source & Content ---",
+            "name": "sourceContentNotice",
+            "type": "notice",
+            "default": ""
+        },
+        {
+            "displayName": "Input Video",
+            "name": "inputVideo",
+            "type": "string",
+            "default": "",
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        false
+                    ]
+                }
+            },
+            "placeholder": "/path/to/source_video.mp4",
+            "description": "The source video to burn the text onto."
+        },
+        {
+            "displayName": "Video Width",
+            "name": "videoWidth",
+            "type": "number",
+            "default": 1080,
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        true
+                    ]
+                }
+            },
+            "description": "The width of the transparent video canvas in pixels."
+        },
+        {
+            "displayName": "Video Height",
+            "name": "videoHeight",
+            "type": "number",
+            "default": 1920,
+            "displayOptions": {
+                "show": {
+                    "outputAsTransparentOverlay": [
+                        true
+                    ]
+                }
+            },
+            "description": "The height of the transparent video canvas in pixels."
+        },
+        {
+            "displayName": "Text Content",
+            "name": "textContent",
+            "type": "string",
+            "typeOptions": {
+                "rows": 4
+            },
+            "default": "",
+            "required": true,
+            "description": "The text you want to display on the video."
+        },
+        {
+            "displayName": "Start Time (seconds)",
+            "name": "startTime",
+            "type": "number",
+            "default": 0,
+            "description": "The time in seconds when the text should appear."
+        },
+        {
+            "displayName": "End Time (seconds)",
+            "name": "endTime",
+            "type": "number",
+            "default": 5,
+            "description": "The time in seconds when the text should disappear."
+        },
+        {
+            "displayName": "--- Style & Position ---",
+            "name": "stylePositionNotice",
+            "type": "notice",
+            "default": ""
+        },
+        {
+            "displayName": "Aspect Ratio",
+            "name": "aspectRatio",
+            "type": "options",
+            "options": [
+                { "name": "Portrait (9:16)", "value": "9:16" },
+                { "name": "Landscape (16:9)", "value": "16:9" }
+            ],
+            "default": "9:16",
+            "description": "Determines the available preset positioning options."
+        },
+        {
+            "displayName": "Font Family",
+            "name": "fontFamily",
+            "type": "options",
+            "options": [
+                { "name": "Anton", "value": "Anton" },
+                { "name": "Asimovian", "value": "Asimovian" },
+                { "name": "Bebas Neue", "value": "Bebas Neue" },
+                { "name": "Caprasimo", "value": "Caprasimo" },
+                { "name": "Libertinus Keyboard", "value": "Libertinus Keyboard" },
+                { "name": "Libre Barcode 39 Text", "value": "Libre Barcode 39 Text" },
+                { "name": "Roboto", "value": "Roboto" },
+                { "name": "Silkscreen", "value": "Silkscreen" },
+                { "name": "Story Script", "value": "Story Script" },
+                { "name": "Trade Winds", "value": "Trade Winds" }
+            ],
+            "default": "Roboto",
+            "description": "Select the font for the text. Font files must be placed in the shared fonts folder."
+        },
+        {
+            "displayName": "Font Size",
+            "name": "fontSize",
+            "type": "number",
+            "default": 72,
+            "description": "The size of the overlay text."
+        },
+        {
+            "displayName": "Font Color",
+            "name": "fontColor",
+            "type": "color",
+            "default": "#FFFFFF"
+        },
+        {
+            "displayName": "Font Outline Color",
+            "name": "fontOutlineColor",
+            "type": "color",
+            "default": "#000000"
+        },
+        {
+            "displayName": "Outline Thickness",
+            "name": "outlineThickness",
+            "type": "number",
+            "default": 3,
+            "description": "The thickness of the text border."
+        },
+        {
+            "displayName": "Use Custom Coordinates",
+            "name": "useCustomCoordinates",
+            "type": "boolean",
+            "default": false,
+            "description": "Toggle to switch between simple presets and advanced X/Y positioning."
+        },
+        {
+            "displayName": "Preset Position (Portrait)",
+            "name": "presetPositionPortrait",
+            "type": "options",
+            "displayOptions": {
+                "show": {
+                    "aspectRatio": [ "9:16" ],
+                    "useCustomCoordinates": [ false ]
+                }
+            },
+            "options": [
+                { "name": "Top", "value": "top" },
+                { "name": "Middle", "value": "middle" },
+                { "name": "Bottom", "value": "bottom" }
+            ],
+            "default": "middle"
+        },
+        {
+            "displayName": "Preset Position (Landscape)",
+            "name": "presetPositionLandscape",
+            "type": "options",
+            "displayOptions": {
+                "show": {
+                    "aspectRatio": [ "16:9" ],
+                    "useCustomCoordinates": [ false ]
+                }
+            },
+            "options": [
+                { "name": "Top Left", "value": "topLeft" },
+                { "name": "Top Center", "value": "topCenter" },
+                { "name": "Top Right", "value": "topRight" },
+                { "name": "Middle Left", "value": "middleLeft" },
+                { "name": "Middle Center", "value": "middleCenter" },
+                { "name": "Middle Right", "value": "middleRight" },
+                { "name": "Bottom Left", "value": "bottomLeft" },
+                { "name": "Bottom Center", "value": "bottomCenter" },
+                { "name": "Bottom Right", "value": "bottomRight" }
+            ],
+            "default": "middleCenter"
+        },
+        {
+            "displayName": "X Coordinate",
+            "name": "xCoordinate",
+            "type": "number",
+            "displayOptions": {
+                "show": { "useCustomCoordinates": [ true ] }
+            },
+            "default": 0,
+            "description": "Horizontal position in pixels from the left edge."
+        },
+        {
+            "displayName": "Y Coordinate",
+            "name": "yCoordinate",
+            "type": "number",
+            "displayOptions": {
+                "show": { "useCustomCoordinates": [ true ] }
+            },
+            "default": 0,
+            "description": "Vertical position in pixels from the top edge."
+        }
+    ]
+}

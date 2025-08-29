@@ -1,6 +1,12 @@
 {
   "functions": [
     {
+      "name": "Add Captions",
+      "value": "addCaptions",
+      "uiFile": "ffmpeg_functions/add_captions/ui_structure.json",
+      "scriptFile": "ffmpeg_functions/add_captions/logic.py"
+    },
+    {
       "name": "Add Overlay",
       "value": "addOverlay",
       "uiFile": "ffmpeg_functions/add_overlay/ui_structure.json",
@@ -65,6 +71,12 @@
       "value": "resizeFiles",
       "uiFile": "ffmpeg_functions/resize_files/ui_structure.json",
       "scriptFile": "ffmpeg_functions/resize_files/logic.py"
+    },
+    {
+        "name": "Text Overlay",
+        "value": "textOverlay",
+        "uiFile": "ffmpeg_functions/text_overlay/ui_structure.json",
+        "scriptFile": "ffmpeg_functions/text_overlay/logic.py"
     },
     {
       "name": "Video Transitions",
