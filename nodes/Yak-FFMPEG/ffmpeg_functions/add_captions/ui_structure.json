@@ -278,7 +278,7 @@
                 "maxValue": 1.0,
                 "numberStep": 0.1
             },
-            "default": 0.8,
+            "default": 1.0,
             "displayOptions": {
                 "show": {
                     "enableBackground": [
