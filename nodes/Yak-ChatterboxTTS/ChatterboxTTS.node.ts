@@ -45,6 +45,13 @@ export class ChatterboxTTS implements INodeType {
 
 			// --- Output Settings ---
 			{
+				displayName: 'Combine Outputs',
+				name: 'combineOutputs',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to combine the audio generated from all input items into a single file.',
+			},
+			{
 				displayName: 'Output as File Path',
 				name: 'outputAsFilePath',
 				type: 'boolean',
@@ -224,7 +231,10 @@ export class ChatterboxTTS implements INodeType {
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
+		const combineOutputs = this.getNodeParameter('combineOutputs', 0, false) as boolean;
+		const temporaryChunkPaths: string[] = [];
 
+		// --- Loop to generate all individual chunks ---
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			let tempJsonPath: string | undefined;
 
@@ -234,36 +244,24 @@ export class ChatterboxTTS implements INodeType {
 				const exaggeration = this.getNodeParameter('exaggeration', itemIndex, 0.5) as number;
 				const cfgWeight = this.getNodeParameter('cfgWeight', itemIndex, 0.5) as number;
 
-				// Prepare temp directories
 				const tempInputDir = path.join(process.cwd(), 'temp', 'input');
 				const tempOutputDir = path.join(process.cwd(), 'temp', 'output');
-
-				// Ensure temp directories exist
 				fs.mkdirSync(tempInputDir, { recursive: true });
 				fs.mkdirSync(tempOutputDir, { recursive: true });
 
-				// This payload will be written to a JSON file and its path passed to Python
 				const payload: IDataObject = {
 					mode: operationMode,
 					exaggeration: exaggeration,
 					cfg_weight: cfgWeight,
 				};
 
-				// --- Conditionally add output extension to payload ---
-				// If the user wants a specific file path, we tell the Python script
-				// what extension to use for its temporary output file.
 				if (outputAsFilePath) {
 					const finalOutputFilePath = this.getNodeParameter('outputFilePath', itemIndex, '') as string;
-					// Add the desired extension to the payload for the Python script
 					payload.output_extension = path.extname(finalOutputFilePath);
 				}
 
-				// --- Handle Target Voice Input ---
-				// This section ensures that the Python script always receives a file path,
-				// creating a temporary file if the input is binary data.
 				const targetUseFilePath = this.getNodeParameter('targetUseFilePath', itemIndex, false) as boolean;
 				let targetVoicePath: string;
-
 				if (targetUseFilePath) {
 					targetVoicePath = this.getNodeParameter('targetFilePath', itemIndex, '') as string;
 				} else {
@@ -271,18 +269,15 @@ export class ChatterboxTTS implements INodeType {
 					if (!items[itemIndex].binary?.[propertyName]) {
 						throw new NodeOperationError(this.getNode(), `Target Voice binary data not found in property '${propertyName}'.`);
 					}
-					// Create a temp file from the binary data for the Python script to use
 					targetVoicePath = await binaryToTempFile(this, itemIndex, propertyName, tempInputDir);
 				}
 				payload.target_voice_path = targetVoicePath;
 
-				// --- Handle Mode-Specific Inputs ---
 				if (operationMode === 'tts') {
 					payload.text = this.getNodeParameter('text', itemIndex, '') as string;
 				} else if (operationMode === 'vc') {
 					const sourceUseFilePath = this.getNodeParameter('sourceUseFilePath', itemIndex, false) as boolean;
 					let sourceAudioPath: string;
-
 					if (sourceUseFilePath) {
 						sourceAudioPath = this.getNodeParameter('sourceFilePath', itemIndex, '') as string;
 					} else {
@@ -290,82 +285,57 @@ export class ChatterboxTTS implements INodeType {
 						if (!items[itemIndex].binary?.[propertyName]) {
 							throw new NodeOperationError(this.getNode(), `Source Audio binary data not found in property '${propertyName}'.`);
 						}
-						// Create a temp file from the binary data
 						sourceAudioPath = await binaryToTempFile(this, itemIndex, propertyName, tempInputDir);
 					}
 					payload.source_audio_path = sourceAudioPath;
 				}
 
-				// --- Write payload to a temporary JSON file ---
 				tempJsonPath = path.join(tempInputDir, `payload_${Date.now()}_${itemIndex}.json`);
 				fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2));
 
-				// --- Execute Python Script ---
 				const condaPythonPath = 'C:\\Users\\2rile\\miniconda3\\envs\\yak_chatterbox_env\\python.exe';
 				const pythonScriptPath = path.join(__dirname, 'ChatterboxTTS.py');
-
-				// Pass the path to the JSON file as a command-line argument
 				const pythonProcess = spawn(condaPythonPath, [pythonScriptPath, tempJsonPath]);
 
 				let scriptOutput = '';
 				let scriptError = '';
-
-				for await (const chunk of pythonProcess.stdout) {
-					scriptOutput += chunk;
-				}
-				for await (const chunk of pythonProcess.stderr) {
-					scriptError += chunk;
-				}
-
+				for await (const chunk of pythonProcess.stdout) { scriptOutput += chunk; }
+				for await (const chunk of pythonProcess.stderr) { scriptError += chunk; }
 				const exitCode = await new Promise(resolve => pythonProcess.on('close', resolve));
 
 				if (exitCode !== 0) {
 					throw new NodeOperationError(this.getNode(), `Python script exited with code ${exitCode}: ${scriptError}`);
 				}
 
-				// The Python script now returns a single line: the path to the temporary output file
 				const tempOutputFilePath = scriptOutput.trim();
-
 				if (!tempOutputFilePath || !fs.existsSync(tempOutputFilePath)) {
 					throw new NodeOperationError(this.getNode(), `Python script finished, but the output file was not found. Error: ${scriptError}`);
 				}
 
-				// --- Handle Final Output ---
-				let newItem: INodeExecutionData;
-
-				if (outputAsFilePath) {
-					// The user wants the output as a file at a specific location.
-					// We need to MOVE the temporary output file to that location.
-					const finalOutputFilePath = this.getNodeParameter('outputFilePath', itemIndex, '') as string;
-					const finalOutputDir = path.dirname(finalOutputFilePath);
-					fs.mkdirSync(finalOutputDir, { recursive: true });
-
-					// Move the file from the temp directory to the final destination
-					fs.renameSync(tempOutputFilePath, finalOutputFilePath);
-
-					newItem = {
-						json: {
-							...items[itemIndex].json,
-							message: 'Chatterbox operation successful.',
-							outputFilePath: finalOutputFilePath
-						},
-					};
+				// --- Handle individual chunk based on combine setting ---
+				if (combineOutputs) {
+					temporaryChunkPaths.push(tempOutputFilePath);
 				} else {
-					// The user wants the output as binary data.
-					// We read the temporary file into a buffer and then delete it.
-					const outputBinaryPropertyName = this.getNodeParameter('outputBinaryPropertyName', itemIndex, 'data') as string;
-					const binaryData = await fileToBinary(tempOutputFilePath, outputBinaryPropertyName, this.helpers);
-
-					newItem = {
-						json: { ...items[itemIndex].json, message: 'Chatterbox operation successful.' },
-						binary: { [outputBinaryPropertyName]: binaryData },
-					};
-
-					// Clean up the temporary output file, as it's no longer needed
-					fs.unlinkSync(tempOutputFilePath);
+					// Not combining, so process and return each file immediately
+					let newItem: INodeExecutionData;
+					if (outputAsFilePath) {
+						const finalOutputFilePath = this.getNodeParameter('outputFilePath', itemIndex, '') as string;
+						fs.mkdirSync(path.dirname(finalOutputFilePath), { recursive: true });
+						fs.renameSync(tempOutputFilePath, finalOutputFilePath);
+						newItem = {
+							json: { ...items[itemIndex].json, message: 'Chatterbox operation successful.', outputFilePath: finalOutputFilePath },
+						};
+					} else {
+						const propertyName = this.getNodeParameter('outputBinaryPropertyName', itemIndex, 'data') as string;
+						const binaryData = await fileToBinary(tempOutputFilePath, propertyName, this.helpers);
+						fs.unlinkSync(tempOutputFilePath); // Clean up the temp file
+						newItem = {
+							json: { ...items[itemIndex].json, message: 'Chatterbox operation successful.' },
+							binary: { [propertyName]: binaryData },
+						};
+					}
+					returnData.push(newItem);
 				}
-
-				returnData.push(newItem);
 
 			} catch (error) {
 				if (this.continueOnFail()) {
@@ -376,17 +346,83 @@ export class ChatterboxTTS implements INodeType {
 					});
 					continue;
 				}
+				// Cleanup any chunks created so far if we're in combine mode and an error occurs
+				if (combineOutputs) { temporaryChunkPaths.forEach(p => fs.existsSync(p) && fs.unlinkSync(p)); }
 				throw error;
 			} finally {
-				// --- Cleanup ---
-				// Ensure the temporary JSON payload file is always deleted
-				if (tempJsonPath && fs.existsSync(tempJsonPath)) {
-					fs.unlinkSync(tempJsonPath);
+				if (tempJsonPath && fs.existsSync(tempJsonPath)) { fs.unlinkSync(tempJsonPath); }
+			}
+		} // --- End of item loop ---
+
+
+		// --- Post-Loop Combination Logic ---
+		if (combineOutputs && temporaryChunkPaths.length > 0) {
+			let finalFilePath: string;
+			const filesToCleanup: string[] = [...temporaryChunkPaths];
+
+			try {
+				if (temporaryChunkPaths.length === 1) {
+					finalFilePath = temporaryChunkPaths[0];
+				} else {
+					// Combine multiple chunks using ffmpeg
+					const tempInputDir = path.join(process.cwd(), 'temp', 'input');
+					const tempOutputDir = path.join(process.cwd(), 'temp', 'output');
+					const fileListPath = path.join(tempInputDir, `filelist_${Date.now()}.txt`);
+					filesToCleanup.push(fileListPath);
+
+					const fileListContent = temporaryChunkPaths
+						.map(p => `file '${path.resolve(p).replace(/\\/g, '/')}'`)
+						.join('\n');
+					fs.writeFileSync(fileListPath, fileListContent);
+
+					const outputExtension = path.extname(temporaryChunkPaths[0]) || '.mp3';
+					const combinedOutputPath = path.join(tempOutputDir, `combined_${Date.now()}${outputExtension}`);
+
+					const ffmpegProcess = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', fileListPath, '-c', 'copy', combinedOutputPath]);
+
+					let ffmpegError = '';
+					for await (const chunk of ffmpegProcess.stderr) { ffmpegError += chunk; }
+					const exitCode = await new Promise(resolve => ffmpegProcess.on('close', resolve));
+
+					if (exitCode !== 0) {
+						throw new NodeOperationError(this.getNode(), `ffmpeg failed with code ${exitCode}: ${ffmpegError}`);
+					}
+					finalFilePath = combinedOutputPath;
 				}
-				// Note: Cleanup of temporary *input* audio files created by `binaryToTempFile`
-				// should be handled by that shared function or another process if necessary.
+
+				// Process the final combined file
+				const outputAsFilePath = this.getNodeParameter('outputAsFilePath', 0, false) as boolean;
+				let newItem: INodeExecutionData;
+
+				if (outputAsFilePath) {
+					const finalUserPath = this.getNodeParameter('outputFilePath', 0, '') as string;
+					fs.mkdirSync(path.dirname(finalUserPath), { recursive: true });
+					fs.renameSync(finalFilePath, finalUserPath);
+					newItem = {
+						json: { ...items[0].json, message: 'Chatterbox combination successful.', outputFilePath: finalUserPath },
+					};
+				} else {
+					const propertyName = this.getNodeParameter('outputBinaryPropertyName', 0, 'data') as string;
+					const binaryData = await fileToBinary(finalFilePath, propertyName, this.helpers);
+					filesToCleanup.push(finalFilePath); // Add final combined file to cleanup
+					newItem = {
+						json: { ...items[0].json, message: 'Chatterbox combination successful.' },
+						binary: { [propertyName]: binaryData },
+					};
+				}
+				returnData.push(newItem);
+
+			} finally {
+				// Final cleanup of all temporary files
+				filesToCleanup.forEach(filePath => {
+					if (fs.existsSync(filePath)) {
+						try { fs.unlinkSync(filePath); }
+						catch (e) { console.error(`Failed to cleanup temp file: ${filePath}`, e); }
+					}
+				});
 			}
 		}
+
 		return [returnData];
 	}
 }
