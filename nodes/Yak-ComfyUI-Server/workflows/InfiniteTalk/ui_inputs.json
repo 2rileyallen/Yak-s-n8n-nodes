@@ -1,5 +1,9 @@
 {
   "output_node_id": "131",
+  "output_file_filter": {
+    "type": "endsWith",
+    "value": "-audio.mp4"
+  },
   "properties": [
     {
       "displayName": "--- Input Media ---",
