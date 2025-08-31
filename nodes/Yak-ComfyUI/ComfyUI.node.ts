@@ -16,7 +16,6 @@ import { promises as fs } from 'fs';
 import { fileToBinary } from '../../SharedFunctions/fileToBinary';
 import { binaryToTempFile } from '../../SharedFunctions/binaryToTempFile';
 
-
 // Manifest structure interfaces for type safety
 interface IWorkflowInManifest {
 	name: string;
@@ -37,7 +36,6 @@ interface ICustomNodeProperty extends IDataObject {
 	default?: any;
 }
 
-
 export class ComfyUI implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Yak ComfyUI',
@@ -52,7 +50,7 @@ export class ComfyUI implements INodeType {
 		outputs: [NodeConnectionType.Main],
 		properties: [
 			// ----------------------------------
-			//      Callback Settings
+			// 			Callback Settings
 			// ----------------------------------
 			{
 				displayName: '--- Callback Settings ---',
@@ -81,7 +79,7 @@ export class ComfyUI implements INodeType {
 			},
 
 			// ----------------------------------
-			//      Workflow Settings
+			// 			Workflow Settings
 			// ----------------------------------
 			{
 				displayName: '--- Workflow Settings ---',
@@ -134,6 +132,65 @@ export class ComfyUI implements INodeType {
 	private static async readJson<T = any>(filePath: string): Promise<T> {
 		const raw = await fs.readFile(filePath, 'utf-8');
 		return JSON.parse(raw) as T;
+	}
+
+	/**
+	 * Generates a unique file path to prevent overwriting existing files.
+	 * If the target path is a directory, it uses the original filename.
+	 * If a file with the same name exists, it appends a counter (e.g., "image (1).png").
+	 * @param {string} targetPath - The user-provided destination path (can be a directory or a full file path).
+	 * @param {string} originalFileName - The original name of the file from ComfyUI (e.g., "ComfyUI_0001_.png").
+	 * @returns {Promise<string>} A promise that resolves to a unique and absolute file path.
+	 */
+	private static async getUniqueFinalPath(
+		targetPath: string,
+		originalFileName: string,
+	): Promise<string> {
+		let finalPath: string;
+		let isDirectory = false;
+
+		try {
+			const stats = await fs.stat(targetPath);
+			isDirectory = stats.isDirectory();
+		} catch (error) {
+			// If stat fails, it might be a new file path in a valid directory.
+			// Check if it has an extension to guess if it's a file.
+			if (path.extname(targetPath) === '') {
+				isDirectory = true;
+			}
+		}
+
+		if (isDirectory) {
+			// User provided a directory, so we use the original filename.
+			finalPath = path.join(targetPath, originalFileName);
+		} else {
+			// User provided a full file path.
+			finalPath = targetPath;
+		}
+
+		// Ensure the destination directory exists.
+		const dir = path.dirname(finalPath);
+		await fs.mkdir(dir, { recursive: true });
+
+		// If the determined path doesn't exist, we can use it directly.
+		if (!(await ComfyUI.pathExists(finalPath))) {
+			return finalPath;
+		}
+
+		// If it exists, find a unique name.
+		const parsedPath = path.parse(finalPath);
+		const baseName = parsedPath.name;
+		const ext = parsedPath.ext;
+		let counter = 1;
+		let uniquePath: string;
+
+		do {
+			const newName = `${baseName} (${counter})${ext}`;
+			uniquePath = path.join(dir, newName);
+			counter++;
+		} while (await ComfyUI.pathExists(uniquePath));
+
+		return uniquePath;
 	}
 
 	// --- Dynamic Property Loading Methods ---
@@ -282,6 +339,19 @@ export class ComfyUI implements INodeType {
 					);
 				}
 
+				// --- NEW: Get output parameters for local use ---
+				const outputAsFilePath = this.getNodeParameter(
+					'outputAsFilePath',
+					itemIndex,
+					false,
+				) as boolean;
+				const outputFilePath = this.getNodeParameter('outputFilePath', itemIndex, '') as string;
+				const outputBinaryPropertyName = this.getNodeParameter(
+					'outputBinaryPropertyName',
+					itemIndex,
+					'data',
+				) as string;
+
 				const [workflowFile, uiFile] = await Promise.all([
 					ComfyUI.readJson(path.join(nodeDir, workflowInfo.workflowFile)),
 					ComfyUI.readJson(path.join(nodeDir, workflowInfo.uiFile)),
@@ -307,9 +377,7 @@ export class ComfyUI implements INodeType {
 						const mapsToKey = prop.mapsTo;
 						let valueToMap: any;
 
-						// This logic is now generic and robust, handling all cases correctly.
 						if (prop.name.endsWith('UseFilePath')) {
-							// This is a boolean toggle; its value is used by other properties but not mapped itself.
 							continue;
 						} else if (prop.name.endsWith('FilePath')) {
 							const prefix = prop.name.replace('FilePath', '');
@@ -322,7 +390,6 @@ export class ComfyUI implements INodeType {
 							const useFilePathToggle = rawUserInputs[`${prefix}UseFilePath`] as boolean;
 
 							if (useFilePathToggle === false) {
-								// This logic is for INPUT media files that need conversion
 								if (prop.name.startsWith('input')) {
 									const binaryPropName = rawUserInputs[prop.name] as string;
 									const tempFilePath = await binaryToTempFile(this, itemIndex, binaryPropName, tempInputPath);
@@ -331,7 +398,6 @@ export class ComfyUI implements INodeType {
 								}
 							}
 						} else {
-							// For all other properties (prompts, numbers, etc.), map their value directly.
 							valueToMap = rawUserInputs[prop.name];
 						}
 
@@ -340,18 +406,13 @@ export class ComfyUI implements INodeType {
 						}
 					}
 				}
-				// **FIXED**: Separately and reliably map the output binary property name if needed.
-				if (rawUserInputs.outputAsFilePath === false) {
-					mappedInputs.outputBinaryPropertyName = rawUserInputs.outputBinaryPropertyName;
-				}
-
 
 				const useWebhook = this.getNodeParameter('useWebhook', itemIndex, false) as boolean;
 				const gatekeeperPayload: IDataObject = {
 					n8n_execution_id: this.getExecutionId(),
 					callback_type: useWebhook ? 'webhook' : 'websocket',
 					workflow_template: workflowTemplate,
-					user_inputs: mappedInputs, // Send the clean, mapped inputs
+					user_inputs: mappedInputs,
 					mappings: uiFile.mappings,
 				};
 
@@ -367,7 +428,9 @@ export class ComfyUI implements INodeType {
 					timeout: 120000,
 				};
 
-				const { job_id: jobId } = (await this.helpers.httpRequest(initialOptions)) as { job_id: string };
+				const { job_id: jobId } = (await this.helpers.httpRequest(initialOptions)) as {
+					job_id: string;
+				};
 
 				if (useWebhook) {
 					returnData.push({
@@ -379,24 +442,40 @@ export class ComfyUI implements INodeType {
 
 				const finalResult = await ComfyUI.waitForWebSocketResult(this, jobId);
 
+				// --- MODIFIED: processResult now correctly handles file path or binary output ---
 				const processResult = async (result: any) => {
 					const tempFilePath = result.data;
 					if (!tempFilePath) {
-						throw new NodeOperationError(this.getNode(), 'Gatekeeper did not return a valid file path.', { itemIndex });
+						throw new NodeOperationError(this.getNode(), 'Gatekeeper did not return a valid file path.', {
+							itemIndex,
+						});
 					}
 
-					const outputAsFilePath = mappedInputs.outputAsFilePath as boolean;
-
 					if (outputAsFilePath) {
-						const finalPath = mappedInputs.outputFilePath as string;
-						await fs.mkdir(path.dirname(finalPath), { recursive: true });
+						if (!outputFilePath) {
+							throw new NodeOperationError(this.getNode(), 'An output directory/path must be provided.', {
+								itemIndex,
+							});
+						}
+						// Use the new helper to get a unique path and avoid overwrites
+						const originalFileName = path.basename(tempFilePath);
+						const finalPath = await ComfyUI.getUniqueFinalPath(outputFilePath, originalFileName);
+
 						await fs.rename(tempFilePath, finalPath);
 						return { json: { filePath: finalPath }, pairedItem: { item: itemIndex } };
 					} else {
-						const propertyName = mappedInputs.outputBinaryPropertyName as string;
-						const binaryData = await fileToBinary(tempFilePath, propertyName, this.helpers);
+						// Binary output logic remains unchanged
+						const binaryData = await fileToBinary(
+							tempFilePath,
+							outputBinaryPropertyName,
+							this.helpers,
+						);
 						await fs.unlink(tempFilePath);
-						return { json: {}, binary: { [propertyName]: binaryData }, pairedItem: { item: itemIndex } };
+						return {
+							json: {},
+							binary: { [outputBinaryPropertyName]: binaryData },
+							pairedItem: { item: itemIndex },
+						};
 					}
 				};
 
@@ -415,7 +494,7 @@ export class ComfyUI implements INodeType {
 				throw error;
 			} finally {
 				for (const file of tempFiles) {
-					await fs.unlink(file).catch(e => console.error(`Failed to delete temp file: ${file}`, e));
+					await fs.unlink(file).catch((e) => console.error(`Failed to delete temp file: ${file}`, e));
 				}
 				tempFiles = [];
 			}
