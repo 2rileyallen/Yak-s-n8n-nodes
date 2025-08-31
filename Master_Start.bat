@@ -1,27 +1,28 @@
 @echo off
-ECHO --- Starting All Services ---
+TITLE Master Service Starter
 
 :: ##################################################################
-:: ##                      USER CONFIGURATION                      ##
-:: ##  You ONLY need to change these two lines to match your system. ##
+:: ##  This script now loads paths from your local configuration.  ##
+:: ##  Run setup.bat once if you haven't already.                  ##
 :: ##################################################################
 
-SET "PROJECT_PATH=C:\Users\2rile\.n8n\custom\Yak-s-n8n-nodes"
-SET "CONDA_PATH=C:\Users\2rile\miniconda3"
+:: --- Load local configuration ---
+if not exist "local_config.bat" (
+    ECHO [ERROR] Configuration file 'local_config.bat' not found.
+    ECHO Please run the setup.bat script once before using this script.
+    PAUSE
+    exit /b
+)
+call local_config.bat
 
-:: ##################################################################
-:: ##                  (No changes needed below)                   ##
-:: ##################################################################
-
-:: Set the current directory to the project path to ensure npm commands work
+:: Set the current directory to the project path to ensure commands work
 cd /d "%PROJECT_PATH%"
 
 ECHO.
-ECHO --- Building n8n Nodes... ---
-call npm run build
-
-ECHO.
 ECHO --- Launching Services Silently in the Background... ---
+ECHO Using Project Path: %PROJECT_PATH%
+ECHO Using Conda Path:   %CONDA_PATH%
+ECHO.
 
 :: We use PowerShell's Start-Process command, which is the most reliable way
 :: to launch processes silently in the background on modern Windows.

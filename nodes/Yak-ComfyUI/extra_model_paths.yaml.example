@@ -5,14 +5,21 @@
 # INSTRUCTIONS:
 # 1. Copy this file into your main ComfyUI installation folder
 #    (e.g., /Software/ComfyUI/).
-# 2. Rename this file to "extra_model_paths.yaml".
+# 2. Rename the copied file to "extra_model_paths.yaml".
 # 3. Edit the TWO placeholder paths below to match your system.
 #
 # ------------------------------------------------------------------
 
 
 # This entry points to the managed models required for the Yak n8n workflows.
-# You MUST update the "base_path" to the absolute path of your "yak-s-n8n-nodes" repository folder.
+# This file now controls BOTH where ComfyUI looks for these models AND where
+# the manage_models.py script downloads and stores them.
+#
+# You MUST update the "base_path" to the absolute path of the FOLDER where
+# you want the "managed_models" directory to be created. This can be on any drive.
+#
+# EXAMPLE: If you set base_path to "D:\My_AI_Stuff\", the script will create
+# and manage models inside "D:\My_AI_Stuff\managed_models\".
 yak:
     base_path: C:\path\to\your\yak-s-n8n-nodes\nodes\Yak-ComfyUI\
     
@@ -29,7 +36,7 @@ yak:
     loras: managed_models/loras
     onnx: managed_models/onnx
     photomaker: managed_models/photomaker
-    sams: managed_gmodels/sams
+    sams: managed_models/sams
     style_models: managed_models/style_models
     text_encoders: managed_models/text_encoders
     unet: managed_models/unet
