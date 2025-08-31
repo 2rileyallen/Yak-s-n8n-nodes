@@ -3,9 +3,10 @@ import json
 import subprocess
 import os
 import tempfile
+import math
 import platform
 
-# Pillow is required for measuring text width.
+# Pillow is required for measuring text width and drawing shapes.
 # You can install it with: pip install Pillow
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -45,6 +46,15 @@ def wrap_text_into_lines(text, font, max_width):
     lines.append(current_line)
     return lines
 
+def hex_to_rgba(hex_color, alpha=1.0):
+    """Converts #RRGGBB to an (R, G, B, A) tuple for Pillow."""
+    hex_color = hex_color.lstrip('#')
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    a = int(alpha * 255)
+    return (r, g, b, a)
+
 def hex_to_ffmpeg_color(hex_color):
     """Converts a #RRGGBB hex color to FFmpeg's 0xRRGGBB format."""
     return f"0x{hex_color[1:]}" if hex_color.startswith('#') else hex_color
@@ -83,14 +93,12 @@ def main():
             height = params.get('videoHeight', 1920)
             duration = end_time
             command.extend(['-f', 'lavfi', '-i', f'color=c=black@0.0:s={width}x{height}:d={duration}'])
-            input_stream_specifier = "[0:v]"
         else:
             input_video = params.get('inputVideoFilePath')
             if not input_video or not os.path.exists(input_video):
                 raise ValueError("Input video path is required for burn-in mode.")
             command.extend(['-i', input_video])
             width, height = get_video_dimensions(input_video)
-            input_stream_specifier = "[0:v]"
 
         # --- FONT LOGIC ---
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -114,95 +122,118 @@ def main():
         enable_background = params.get('enableBackground', False)
         bg_color = params.get('backgroundColor', '#000000')
         bg_padding = params.get('backgroundPadding', 10)
+        bg_opacity = params.get('backgroundOpacity', 0.8)
+        use_rounded_corners = params.get('useRoundedCorners', True)
+        corner_radius = 15
 
-        # --- WRAP AND POSITION TEXT ---
+        # --- BUILD FILTER CHAIN ---
         max_text_width = width * 0.9
         lines = wrap_text_into_lines(text_content, font, max_text_width)
         
+        all_filters = []
+        last_video_stream = "0:v"
+
+        # --- Generate background PNGs if needed ---
+        if enable_background and use_rounded_corners:
+            for j, line_text in enumerate(lines):
+                line_width = font.getbbox(line_text)[2]
+                line_height = font.getbbox("Agh")[3] - font.getbbox("Agh")[1]
+                box_width = line_width + (bg_padding * 2)
+                box_height = line_height + (bg_padding * 2)
+                
+                img = Image.new('RGBA', (int(box_width), int(box_height)), (0, 0, 0, 0))
+                draw = ImageDraw.Draw(img)
+                rgba_color = hex_to_rgba(bg_color, bg_opacity)
+                draw.rounded_rectangle([(0, 0), (box_width, box_height)], radius=corner_radius, fill=rgba_color)
+                
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_img:
+                    img.save(temp_img, 'PNG')
+                    temp_img_path = temp_img.name
+                    temp_files.append(temp_img_path)
+                
+                command.extend(['-i', temp_img_path])
+
+        # --- Build the actual filter string ---
         line_height = font.getbbox("Agh")[3] - font.getbbox("Agh")[1]
         total_text_height = len(lines) * line_height
-
+        
         aspect_ratio = params.get('aspectRatio', '9:16')
         use_custom_coords = params.get('useCustomCoordinates', False)
-        
-        all_filters = []
-        
+
         if use_custom_coords:
             start_y = params.get('yCoordinate', 10)
-            box_filters = []
-            text_filters = []
-            for j, line_text in enumerate(lines):
-                line_y_pos = start_y + (j * line_height)
-                line_width = font.getbbox(line_text)[2]
-                if enable_background:
-                    box_width = line_width + (bg_padding * 2)
-                    box_height = line_height + (bg_padding * 2)
-                    box_x = params.get('xCoordinate', 10) - bg_padding
-                    box_y = line_y_pos - bg_padding
-                    box_filter = (f"drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:"
-                                  f"color={hex_to_ffmpeg_color(bg_color)}@0.8:t=fill:"
-                                  f"enable='between(t,{start_time},{end_time})'")
-                    box_filters.append(box_filter)
-
-                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
-                text_filter = (f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':enable='between(t,{start_time},{end_time})':"
-                            f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
-                            f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 3)}:"
-                            f"x={params.get('xCoordinate', 10)}:y={line_y_pos}")
-                text_filters.append(text_filter)
-            all_filters.extend(box_filters)
-            all_filters.extend(text_filters)
         else:
             position_key = params.get('presetPositionPortrait', 'middle') if aspect_ratio == '9:16' else params.get('presetPositionLandscape', 'middleCenter')
-            
             if "top" in position_key.lower(): center_y = height / 6
             elif "middle" in position_key.lower(): center_y = height / 2
             else: center_y = 5 * height / 6
-            
             start_y = center_y - (total_text_height / 2)
-            
-            box_filters = []
-            text_filters = []
+        
+        # --- Layer backgrounds first ---
+        input_count = 1
+        if enable_background:
             for j, line_text in enumerate(lines):
-                line_y_pos = start_y + (j * line_height)
                 line_width = font.getbbox(line_text)[2]
-
-                if "left" in position_key.lower(): x_expr = "10"
-                elif "right" in position_key.lower(): x_expr = f"w-({line_width})-10"
-                else: x_expr = f"(w-{line_width})/2"
-
-                if enable_background:
-                    box_width = line_width + (bg_padding * 2)
-                    box_height = line_height + (bg_padding * 2)
+                line_y_pos = start_y + (j * line_height)
+                box_width = line_width + (bg_padding * 2)
+                box_height = line_height + (bg_padding * 2)
+                
+                if use_custom_coords:
+                    box_x = params.get('xCoordinate', 10) - bg_padding
+                else:
+                    position_key = params.get('presetPositionPortrait', 'middle') if aspect_ratio == '9:16' else params.get('presetPositionLandscape', 'middleCenter')
                     if "left" in position_key.lower(): box_x = 10 - bg_padding
                     elif "right" in position_key.lower(): box_x = width - line_width - 10 - bg_padding
                     else: box_x = (width / 2) - (box_width / 2)
-                    box_y = line_y_pos - bg_padding
-                    box_filter = (f"drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:"
-                                  f"color={hex_to_ffmpeg_color(bg_color)}@1.0:t=fill:"
-                                  f"enable='between(t,{start_time},{end_time})'")
-                    box_filters.append(box_filter)
+                
+                box_y = line_y_pos - bg_padding
 
-                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
-                text_filter = (f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':enable='between(t,{start_time},{end_time})':"
-                            f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
-                            f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 3)}:"
-                            f"x={x_expr}:y={line_y_pos}")
-                text_filters.append(text_filter)
-            all_filters.extend(box_filters)
-            all_filters.extend(text_filters)
+                next_stream_name = f"v_bg_{j}"
+                if use_rounded_corners:
+                    overlay_filter = f"[{last_video_stream}][{input_count}:v]overlay={box_x}:{box_y}:enable='between(t,{start_time},{end_time})'[{next_stream_name}]"
+                    input_count += 1
+                else:
+                    overlay_filter = f"[{last_video_stream}]drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:color={hex_to_ffmpeg_color(bg_color)}@{bg_opacity}:t=fill:enable='between(t,{start_time},{end_time})'[{next_stream_name}]"
+                
+                all_filters.append(overlay_filter)
+                last_video_stream = next_stream_name
+
+        # --- Layer text on top ---
+        for j, line_text in enumerate(lines):
+            line_y_pos = start_y + (j * line_height)
+            escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+
+            if use_custom_coords:
+                x_expr = str(params.get('xCoordinate', 10))
+            else:
+                position_key = params.get('presetPositionPortrait', 'middle') if aspect_ratio == '9:16' else params.get('presetPositionLandscape', 'middleCenter')
+                line_width = font.getbbox(line_text)[2]
+                if "left" in position_key.lower(): x_expr = "10"
+                elif "right" in position_key.lower(): x_expr = f"w-{line_width}-10"
+                else: x_expr = f"(w-{line_width})/2"
+            
+            next_stream_name = f"v_txt_{j}"
+            text_filter = (
+                f"[{last_video_stream}]drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':"
+                f"enable='between(t,{start_time},{end_time})':"
+                f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
+                f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 3)}:"
+                f"x={x_expr}:y={line_y_pos}[{next_stream_name}]"
+            )
+            all_filters.append(text_filter)
+            last_video_stream = next_stream_name
 
         # --- CREATE AND USE FILTER SCRIPT ---
-        filter_chain = f"{input_stream_specifier}{','.join(all_filters)}[outv]"
+        final_filter_chain = ";".join(all_filters)
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as temp_filter_file:
-            temp_filter_file.write(filter_chain)
+            temp_filter_file.write(final_filter_chain)
             temp_filter_path = temp_filter_file.name
             temp_files.append(temp_filter_path)
         
         command.extend(['-filter_complex_script', temp_filter_path])
         
         # --- OUTPUT MAPPING & CODECS ---
-        command.extend(['-map', '[outv]'])
+        command.extend(['-map', f"[{last_video_stream}]"])
         if not is_transparent:
             command.extend(['-map', '0:a?'])
         

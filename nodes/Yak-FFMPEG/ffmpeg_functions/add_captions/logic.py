@@ -6,7 +6,7 @@ import tempfile
 import math
 import platform
 
-# Pillow is required for measuring text width.
+# Pillow is required for measuring text width and drawing shapes.
 # You can install it with: pip install Pillow
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -62,9 +62,14 @@ def wrap_text_into_lines(text, font, max_width):
     lines.append(current_line)
     return lines
 
-def hex_to_ffmpeg_color(hex_color):
-    """Converts a #RRGGBB hex color to FFmpeg's 0xRRGGBB format."""
-    return f"0x{hex_color[1:]}" if hex_color.startswith('#') else hex_color
+def hex_to_rgba(hex_color, alpha=1.0):
+    """Converts #RRGGBB to an (R, G, B, A) tuple for Pillow."""
+    hex_color = hex_color.lstrip('#')
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    a = int(alpha * 255)
+    return (r, g, b, a)
 
 def get_total_duration(words):
     """Gets the end time of the last word in the list."""
@@ -94,21 +99,19 @@ def main():
         output_dir = params.get('outputDirectory')
         output_base_name = params.get('outputBaseName')
         output_path = os.path.join(output_dir, f"{output_base_name}.{'mov' if is_transparent else 'mp4'}")
-
+        
         if is_transparent:
             width = params.get('videoWidth', 1080)
             height = params.get('videoHeight', 1920)
             duration = get_total_duration(word_list)
             command.extend(['-f', 'lavfi', '-i', f'color=c=black@0.0:s={width}x{height}:d={duration}'])
-            input_stream_specifier = "[0:v]"
         else:
             input_video = params.get('inputVideoFilePath')
             if not input_video or not os.path.exists(input_video):
                 raise ValueError("Input video path is required for burn-in mode.")
             command.extend(['-i', input_video])
             width, height = get_video_dimensions(input_video)
-            input_stream_specifier = "[0:v]"
-
+        
         # --- FONT LOGIC ---
         script_dir = os.path.dirname(os.path.abspath(__file__))
         fonts_dir = os.path.abspath(os.path.join(script_dir, '..', '_shared', 'text_effects', 'fonts'))
@@ -131,80 +134,104 @@ def main():
         enable_background = params.get('enableBackground', False)
         bg_color = params.get('backgroundColor', '#000000')
         bg_padding = params.get('backgroundPadding', 10)
+        bg_opacity = params.get('backgroundOpacity', 0.8)
+        use_rounded_corners = params.get('useRoundedCorners', True)
+        corner_radius = 15
 
         # --- BUILD FILTER CHAIN ---
-        all_filters = []
         max_text_width = width * 0.9
+        all_filters = []
+        last_video_stream = "0:v"
         
-        for i in range(0, len(word_list), max_words):
-            chunk = word_list[i:i + max_words]
+        caption_chunks = [word_list[i:i + max_words] for i in range(0, len(word_list), max_words)]
+
+        if enable_background and use_rounded_corners:
+            # Generate all PNGs first and add them as inputs
+            for i, chunk in enumerate(caption_chunks):
+                original_text = " ".join(w['word'].strip() for w in chunk)
+                lines = wrap_text_into_lines(original_text, font, max_text_width)
+                for j, line_text in enumerate(lines):
+                    line_width = font.getbbox(line_text)[2]
+                    line_height = font.getbbox("Agh")[3] - font.getbbox("Agh")[1]
+                    box_width = line_width + (bg_padding * 2)
+                    box_height = line_height + (bg_padding * 2)
+                    
+                    img = Image.new('RGBA', (int(box_width), int(box_height)), (0, 0, 0, 0))
+                    draw = ImageDraw.Draw(img)
+                    rgba_color = hex_to_rgba(bg_color, bg_opacity)
+                    draw.rounded_rectangle([(0, 0), (box_width, box_height)], radius=corner_radius, fill=rgba_color)
+                    
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_img:
+                        img.save(temp_img, 'PNG')
+                        temp_img_path = temp_img.name
+                        temp_files.append(temp_img_path)
+                    
+                    command.extend(['-i', temp_img_path])
+
+        # --- Build the actual filter string ---
+        input_count = 1 # Start at 1 because 0 is the video
+        for i, chunk in enumerate(caption_chunks):
             start_time = chunk[0]['start']
             end_time = chunk[-1]['end']
-            
             original_text = " ".join(w['word'].strip() for w in chunk)
             lines = wrap_text_into_lines(original_text, font, max_text_width)
             
-            # --- DYNAMIC POSITIONING ---
             line_height = font.getbbox("Agh")[3] - font.getbbox("Agh")[1]
             total_text_height = len(lines) * line_height
             
             position_key = params.get('presetPositionPortrait', 'bottom')
-            
             if position_key == 'top': center_y = height / 6
             elif position_key == 'middle': center_y = height / 2
             else: center_y = 5 * height / 6
-            
             start_y = center_y - (total_text_height / 2)
 
-            # --- GENERATE FILTERS (BACKGROUND FIRST, THEN TEXT) ---
-            box_filters = []
-            text_filters = []
-
-            for j, line_text in enumerate(lines):
-                # Calculate dimensions and position for this specific line
-                line_width = font.getbbox(line_text)[2]
-                line_y_pos = start_y + (j * line_height)
-                
-                # --- BACKGROUND BOX LOGIC ---
-                if enable_background:
+            # Layer backgrounds first
+            if enable_background:
+                for j, line_text in enumerate(lines):
+                    line_width = font.getbbox(line_text)[2]
+                    line_y_pos = start_y + (j * line_height)
                     box_width = line_width + (bg_padding * 2)
                     box_height = line_height + (bg_padding * 2)
                     box_x = (width / 2) - (box_width / 2)
                     box_y = line_y_pos - bg_padding
+
+                    next_stream_name = f"v_bg_{i}_{j}"
+                    if use_rounded_corners:
+                        overlay_filter = f"[{last_video_stream}][{input_count}:v]overlay={box_x}:{box_y}:enable='between(t,{start_time},{end_time})'[{next_stream_name}]"
+                        input_count += 1
+                    else:
+                        overlay_filter = f"[{last_video_stream}]drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:color={hex_to_ffmpeg_color(bg_color)}@{bg_opacity}:t=fill:enable='between(t,{start_time},{end_time})'[{next_stream_name}]"
                     
-                    # NOTE: FFmpeg's drawbox doesn't support rounded corners natively.
-                    # This implementation uses standard rectangular boxes.
-                    box_filter = (f"drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:"
-                                  f"color={hex_to_ffmpeg_color(bg_color)}@1.0:t=fill:"
-                                  f"enable='between(t,{start_time},{end_time})'")
-                    box_filters.append(box_filter)
+                    all_filters.append(overlay_filter)
+                    last_video_stream = next_stream_name
 
-                # --- TEXT LOGIC ---
+            # Layer text on top
+            for j, line_text in enumerate(lines):
+                line_y_pos = start_y + (j * line_height)
                 escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+                
+                next_stream_name = f"v_txt_{i}_{j}"
                 text_filter = (
-                    f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':"
+                    f"[{last_video_stream}]drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':"
                     f"enable='between(t,{start_time},{end_time})':"
-                    f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
-                    f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 2)}:"
-                    f"x=(w-text_w)/2:y={line_y_pos}"
+                    f"fontcolor={params.get('fontColor', '#FFFFFF')}:fontsize={font_size}:"
+                    f"bordercolor={params.get('fontOutlineColor', '#000000')}:borderw={params.get('outlineThickness', 2)}:"
+                    f"x=(w-text_w)/2:y={line_y_pos}[{next_stream_name}]"
                 )
-                text_filters.append(text_filter)
-
-            # Add filters to the main list in the correct order (boxes first)
-            all_filters.extend(box_filters)
-            all_filters.extend(text_filters)
-
+                all_filters.append(text_filter)
+                last_video_stream = next_stream_name
+        
         # --- CREATE AND USE FILTER SCRIPT ---
-        filter_chain = f"{input_stream_specifier}{','.join(all_filters)}[outv]"
+        final_filter_chain = ";".join(all_filters)
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as temp_filter_file:
-            temp_filter_file.write(filter_chain)
+            temp_filter_file.write(final_filter_chain)
             temp_filter_path = temp_filter_file.name
             temp_files.append(temp_filter_path)
         
         command.extend(['-filter_complex_script', temp_filter_path])
         
         # --- OUTPUT MAPPING & CODECS ---
-        command.extend(['-map', '[outv]'])
+        command.extend(['-map', f"[{last_video_stream}]"])
         if not is_transparent:
             command.extend(['-map', '0:a?'])
         

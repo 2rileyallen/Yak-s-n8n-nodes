@@ -260,6 +260,39 @@
             },
             "description": "The amount of space between the text and the edge of the background box."
         },
+                {
+            "displayName": "Background Opacity",
+            "name": "backgroundOpacity",
+            "type": "number",
+            "typeOptions": {
+                "minValue": 0.0,
+                "maxValue": 1.0,
+                "numberStep": 0.1
+            },
+            "default": 0.8,
+            "displayOptions": {
+                "show": {
+                    "enableBackground": [
+                        true
+                    ]
+                }
+            },
+            "description": "Set the opacity of the background box (0.0 = fully transparent, 1.0 = fully solid)."
+        },
+        {
+            "displayName": "Use Rounded Corners",
+            "name": "useRoundedCorners",
+            "type": "boolean",
+            "default": true,
+            "displayOptions": {
+                "show": {
+                    "enableBackground": [
+                        true
+                    ]
+                }
+            },
+            "description": "Toggle to use rounded corners for the background box."
+        },
         {
             "displayName": "Use Custom Coordinates",
             "name": "useCustomCoordinates",
