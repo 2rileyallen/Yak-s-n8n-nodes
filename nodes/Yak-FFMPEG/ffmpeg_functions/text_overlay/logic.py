@@ -110,6 +110,11 @@ def main():
         font_size = params.get('fontSize', 72)
         font = ImageFont.truetype(font_file_path, font_size)
 
+        # --- BACKGROUND SETTINGS ---
+        enable_background = params.get('enableBackground', False)
+        bg_color = params.get('backgroundColor', '#000000')
+        bg_padding = params.get('backgroundPadding', 10)
+
         # --- WRAP AND POSITION TEXT ---
         max_text_width = width * 0.9
         lines = wrap_text_into_lines(text_content, font, max_text_width)
@@ -120,21 +125,34 @@ def main():
         aspect_ratio = params.get('aspectRatio', '9:16')
         use_custom_coords = params.get('useCustomCoordinates', False)
         
-        drawtext_filters = []
-
+        all_filters = []
+        
         if use_custom_coords:
-            # For custom coordinates, the user specifies the top-left of the text block.
             start_y = params.get('yCoordinate', 10)
+            box_filters = []
+            text_filters = []
             for j, line_text in enumerate(lines):
-                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
                 line_y_pos = start_y + (j * line_height)
-                filter_str = (f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':enable='between(t,{start_time},{end_time})':"
+                line_width = font.getbbox(line_text)[2]
+                if enable_background:
+                    box_width = line_width + (bg_padding * 2)
+                    box_height = line_height + (bg_padding * 2)
+                    box_x = params.get('xCoordinate', 10) - bg_padding
+                    box_y = line_y_pos - bg_padding
+                    box_filter = (f"drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:"
+                                  f"color={hex_to_ffmpeg_color(bg_color)}@0.8:t=fill:"
+                                  f"enable='between(t,{start_time},{end_time})'")
+                    box_filters.append(box_filter)
+
+                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+                text_filter = (f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':enable='between(t,{start_time},{end_time})':"
                             f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
                             f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 3)}:"
                             f"x={params.get('xCoordinate', 10)}:y={line_y_pos}")
-                drawtext_filters.append(filter_str)
+                text_filters.append(text_filter)
+            all_filters.extend(box_filters)
+            all_filters.extend(text_filters)
         else:
-            # For presets, we center the entire block.
             position_key = params.get('presetPositionPortrait', 'middle') if aspect_ratio == '9:16' else params.get('presetPositionLandscape', 'middleCenter')
             
             if "top" in position_key.lower(): center_y = height / 6
@@ -142,24 +160,40 @@ def main():
             else: center_y = 5 * height / 6
             
             start_y = center_y - (total_text_height / 2)
-
+            
+            box_filters = []
+            text_filters = []
             for j, line_text in enumerate(lines):
-                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
                 line_y_pos = start_y + (j * line_height)
+                line_width = font.getbbox(line_text)[2]
 
-                # Horizontal positioning for presets
                 if "left" in position_key.lower(): x_expr = "10"
-                elif "right" in position_key.lower(): x_expr = "w-text_w-10"
-                else: x_expr = "(w-text_w)/2"
+                elif "right" in position_key.lower(): x_expr = f"w-({line_width})-10"
+                else: x_expr = f"(w-{line_width})/2"
 
-                filter_str = (f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':enable='between(t,{start_time},{end_time})':"
+                if enable_background:
+                    box_width = line_width + (bg_padding * 2)
+                    box_height = line_height + (bg_padding * 2)
+                    if "left" in position_key.lower(): box_x = 10 - bg_padding
+                    elif "right" in position_key.lower(): box_x = width - line_width - 10 - bg_padding
+                    else: box_x = (width / 2) - (box_width / 2)
+                    box_y = line_y_pos - bg_padding
+                    box_filter = (f"drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:"
+                                  f"color={hex_to_ffmpeg_color(bg_color)}@1.0:t=fill:"
+                                  f"enable='between(t,{start_time},{end_time})'")
+                    box_filters.append(box_filter)
+
+                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+                text_filter = (f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':enable='between(t,{start_time},{end_time})':"
                             f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
                             f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 3)}:"
                             f"x={x_expr}:y={line_y_pos}")
-                drawtext_filters.append(filter_str)
+                text_filters.append(text_filter)
+            all_filters.extend(box_filters)
+            all_filters.extend(text_filters)
 
         # --- CREATE AND USE FILTER SCRIPT ---
-        filter_chain = f"{input_stream_specifier}{','.join(drawtext_filters)}[outv]"
+        filter_chain = f"{input_stream_specifier}{','.join(all_filters)}[outv]"
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as temp_filter_file:
             temp_filter_file.write(filter_chain)
             temp_filter_path = temp_filter_file.name
@@ -197,3 +231,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

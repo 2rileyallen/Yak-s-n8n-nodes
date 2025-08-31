@@ -127,9 +127,14 @@ def main():
         font_size = params.get('fontSize', 48)
         font = ImageFont.truetype(font_file_path, font_size)
 
-        # --- BUILD DRAWTEXT FILTER CHAIN ---
-        drawtext_filters = []
-        max_text_width = width * 0.9 # Use 90% of video width as max
+        # --- BACKGROUND SETTINGS ---
+        enable_background = params.get('enableBackground', False)
+        bg_color = params.get('backgroundColor', '#000000')
+        bg_padding = params.get('backgroundPadding', 10)
+
+        # --- BUILD FILTER CHAIN ---
+        all_filters = []
+        max_text_width = width * 0.9
         
         for i in range(0, len(word_list), max_words):
             chunk = word_list[i:i + max_words]
@@ -137,46 +142,60 @@ def main():
             end_time = chunk[-1]['end']
             
             original_text = " ".join(w['word'].strip() for w in chunk)
-            # Wrap the text into a list of lines
             lines = wrap_text_into_lines(original_text, font, max_text_width)
             
-            # --- DYNAMIC POSITIONING LOGIC ---
-            line_height = font.getbbox("Agh")[3] - font.getbbox("Agh")[1] # Get height of a single line
+            # --- DYNAMIC POSITIONING ---
+            line_height = font.getbbox("Agh")[3] - font.getbbox("Agh")[1]
             total_text_height = len(lines) * line_height
             
             position_key = params.get('presetPositionPortrait', 'bottom')
             
-            if position_key == 'top':
-                center_y = height / 6
-            elif position_key == 'middle':
-                center_y = height / 2
-            else: # bottom
-                center_y = 5 * height / 6
+            if position_key == 'top': center_y = height / 6
+            elif position_key == 'middle': center_y = height / 2
+            else: center_y = 5 * height / 6
             
             start_y = center_y - (total_text_height / 2)
 
-            # Create a separate drawtext filter for each line
-            for j, line_text in enumerate(lines):
-                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
-                
-                # Calculate the Y position for this specific line
-                line_y_pos = start_y + (j * line_height)
+            # --- GENERATE FILTERS (BACKGROUND FIRST, THEN TEXT) ---
+            box_filters = []
+            text_filters = []
 
-                filter_str = (
-                    f"drawtext="
-                    f"fontfile='{escaped_font_path}':"
-                    f"text='{escaped_text}':"
+            for j, line_text in enumerate(lines):
+                # Calculate dimensions and position for this specific line
+                line_width = font.getbbox(line_text)[2]
+                line_y_pos = start_y + (j * line_height)
+                
+                # --- BACKGROUND BOX LOGIC ---
+                if enable_background:
+                    box_width = line_width + (bg_padding * 2)
+                    box_height = line_height + (bg_padding * 2)
+                    box_x = (width / 2) - (box_width / 2)
+                    box_y = line_y_pos - bg_padding
+                    
+                    # NOTE: FFmpeg's drawbox doesn't support rounded corners natively.
+                    # This implementation uses standard rectangular boxes.
+                    box_filter = (f"drawbox=x={box_x}:y={box_y}:w={box_width}:h={box_height}:"
+                                  f"color={hex_to_ffmpeg_color(bg_color)}@1.0:t=fill:"
+                                  f"enable='between(t,{start_time},{end_time})'")
+                    box_filters.append(box_filter)
+
+                # --- TEXT LOGIC ---
+                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+                text_filter = (
+                    f"drawtext=fontfile='{escaped_font_path}':text='{escaped_text}':"
                     f"enable='between(t,{start_time},{end_time})':"
-                    f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:"
-                    f"fontsize={font_size}:"
-                    f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:"
-                    f"borderw={params.get('outlineThickness', 2)}:"
-                    f"x=(w-text_w)/2:y={line_y_pos}" # Use the calculated, precise Y position
+                    f"fontcolor={hex_to_ffmpeg_color(params.get('fontColor', '#FFFFFF'))}:fontsize={font_size}:"
+                    f"bordercolor={hex_to_ffmpeg_color(params.get('fontOutlineColor', '#000000'))}:borderw={params.get('outlineThickness', 2)}:"
+                    f"x=(w-text_w)/2:y={line_y_pos}"
                 )
-                drawtext_filters.append(filter_str)
+                text_filters.append(text_filter)
+
+            # Add filters to the main list in the correct order (boxes first)
+            all_filters.extend(box_filters)
+            all_filters.extend(text_filters)
 
         # --- CREATE AND USE FILTER SCRIPT ---
-        filter_chain = f"{input_stream_specifier}{','.join(drawtext_filters)}[outv]"
+        filter_chain = f"{input_stream_specifier}{','.join(all_filters)}[outv]"
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as temp_filter_file:
             temp_filter_file.write(filter_chain)
             temp_filter_path = temp_filter_file.name

@@ -231,6 +231,44 @@
             "default": 2,
             "description": "The thickness of the text border in pixels."
         },
+                {
+            "displayName": "Enable Background",
+            "name": "enableBackground",
+            "type": "boolean",
+            "default": false,
+            "description": "Toggle to draw a background box behind the text for better readability."
+        },
+        {
+            "displayName": "Background Color",
+            "name": "backgroundColor",
+            "type": "color",
+            "default": "#000000",
+            "displayOptions": {
+                "show": {
+                    "enableBackground": [
+                        true
+                    ]
+                }
+            },
+            "description": "The color of the background box."
+        },
+        {
+            "displayName": "Background Padding (pixels)",
+            "name": "backgroundPadding",
+            "type": "number",
+            "typeOptions": {
+                "minValue": 0
+            },
+            "default": 10,
+            "displayOptions": {
+                "show": {
+                    "enableBackground": [
+                        true
+                    ]
+                }
+            },
+            "description": "The amount of space between the text and the edge of the background box."
+        },
         {
             "displayName": "Use Custom Coordinates",
             "name": "useCustomCoordinates",
