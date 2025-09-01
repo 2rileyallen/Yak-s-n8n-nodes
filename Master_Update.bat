@@ -1,42 +1,57 @@
 @echo off
-ECHO --- Starting Master ComfyUI Environment Update ---
+ECHO --- Starting Full Repository and Environment Update ---
 
-:: Set the current directory to this script's location
+:: ------------------------------------------------------------------
+:: Set the current directory to the script's location (the project root)
+:: ------------------------------------------------------------------
 cd /d "%~dp0"
 
-:: Activate the conda environment once for all subsequent scripts
+:: ------------------------------------------------------------------
+:: STEP 1: Update the main repository from Git
+:: ------------------------------------------------------------------
 ECHO.
-ECHO --- Activating Conda Environment: yak_comfyui_env ---
-call conda activate yak_comfyui_env
+ECHO --- [1/5] Pulling latest changes from the Git repository... ---
+git pull
 
-:: --- NEW STEP: Install/Update Python Requirements ---
+:: ------------------------------------------------------------------
+:: STEP 2: Update Node.js dependencies and build the n8n nodes
+:: ------------------------------------------------------------------
 ECHO.
-ECHO ======================================================
-ECHO  INSTALLING/UPDATING PYTHON REQUIREMENTS
-ECHO ======================================================
+ECHO --- [2/5] Updating Node.js requirements and building nodes... ---
+npm install
+npm run build
+
+:: ------------------------------------------------------------------
+:: STEP 3: Update Python dependencies from the root requirements file
+:: ------------------------------------------------------------------
+ECHO.
+ECHO --- [3/5] Updating Python requirements... ---
+call conda activate yak_comfyui_env
 pip install -r requirements.txt
 
-:: --- Step 1: Update the ComfyUI Application ---
+:: ------------------------------------------------------------------
+:: STEP 4: Update the core ComfyUI application
+:: ------------------------------------------------------------------
 ECHO.
-ECHO ======================================================
-ECHO  STEP 1: UPDATING CORE COMFYUI APP
-ECHO ======================================================
-call ..\..\Software\update_comfyui_app.bat
+ECHO --- [4/5] Updating the core ComfyUI application... ---
+:: Change directory into the Software folder before calling the app updater
+cd "Software"
+call "update_comfyui_app.bat"
+:: Return to the project root
+cd "%~dp0"
 
-:: --- Step 2: Synchronize Custom Nodes ---
+:: ------------------------------------------------------------------
+:: STEP 5: Update the Yak-ComfyUI node dependencies (models & custom nodes)
+:: ------------------------------------------------------------------
 ECHO.
-ECHO ======================================================
-ECHO  STEP 2: SYNCHRONIZING CUSTOM NODES
-ECHO ======================================================
-call manage_custom_nodes.bat
-
-:: --- Step 3: Synchronize Models ---
-ECHO.
-ECHO ======================================================
-ECHO  STEP 3: SYNCHRONIZING MODELS
-ECHO ======================================================
-call manage_models.bat
+ECHO --- [5/5] Updating Yak-ComfyUI models and custom nodes... ---
+:: Change directory into the node's folder before calling its specific updater
+cd "nodes\Yak-ComfyUI"
+call "master_update_comfyui.bat"
+:: Return to the project root
+cd "%~dp0"
 
 ECHO.
-ECHO --- Master ComfyUI Environment Update Complete ---
+ECHO --- Full Repository and Environment Update Complete ---
 PAUSE
+

@@ -1,35 +1,35 @@
 @echo off
-ECHO --- Starting Master ComfyUI Environment Update ---
+ECHO --- Starting Yak-ComfyUI Node Environment Update ---
 
-:: Set the current directory to this script's location
-cd /d "%~dp0"
+:: This script is now called from its own directory, so relative paths are reliable.
 
-:: Activate the conda environment once for all subsequent scripts
+:: ------------------------------------------------------------------
+:: Activate the Conda environment
+:: ------------------------------------------------------------------
 ECHO.
 ECHO --- Activating Conda Environment: yak_comfyui_env ---
 call conda activate yak_comfyui_env
 
-:: --- Step 1: Update the ComfyUI Application ---
-ECHO.
-ECHO ======================================================
-ECHO  STEP 1: UPDATING CORE COMFYUI APP
-ECHO ======================================================
-call ..\..\Software\update_comfyui_app.bat
+:: The Python requirements are now handled by the main update script.
 
-:: --- Step 2: Synchronize Custom Nodes ---
+:: ------------------------------------------------------------------
+:: Synchronize the required custom nodes for the workflows
+:: ------------------------------------------------------------------
 ECHO.
 ECHO ======================================================
-ECHO  STEP 2: SYNCHRONIZING CUSTOM NODES
+ECHO  SYNCHRONIZING CUSTOM NODES
 ECHO ======================================================
-call manage_custom_nodes.bat
+call "manage_custom_nodes.bat"
 
-:: --- Step 3: Synchronize Models ---
+:: ------------------------------------------------------------------
+:: Synchronize the required models for the workflows
+:: ------------------------------------------------------------------
 ECHO.
 ECHO ======================================================
-ECHO  STEP 3: SYNCHRONIZING MODELS
+ECHO  SYNCHRONIZING MODELS
 ECHO ======================================================
-call manage_models.bat
+call "manage_models.bat"
 
 ECHO.
-ECHO --- Master ComfyUI Environment Update Complete ---
-PAUSE
+ECHO --- Yak-ComfyUI Node Environment Update Complete ---
+:: The PAUSE command is removed from this sub-script so the main script can finish.
