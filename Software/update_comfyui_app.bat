@@ -8,7 +8,9 @@ cd /d "%~dp0"
 cd ComfyUI
 
 ECHO.
-ECHO --- Pulling latest changes for ComfyUI... ---
+ECHO --- Checking out master branch and pulling latest changes... ---
+:: NEW: Explicitly check out the master branch to avoid "detached HEAD" issues during pull
+git checkout master
 git pull
 
 ECHO.
@@ -19,4 +21,4 @@ pip install -r requirements.txt
 
 ECHO.
 ECHO --- ComfyUI application update complete. ---
-PAUSE
+:: The PAUSE command has been removed to allow the master update script to continue uninterrupted.
