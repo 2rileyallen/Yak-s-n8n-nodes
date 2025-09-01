@@ -14,4 +14,4 @@ python manage_models.py
 
 ECHO.
 ECHO --- Model synchronization complete. ---
-PAUSE
+:: The PAUSE command has been removed to allow the master update script to continue uninterrupted.
