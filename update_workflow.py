@@ -5,8 +5,19 @@ import sys
 import os
 from datetime import datetime
 
-# Protected node names that will never be overwritten during sync
-PROTECTED_NODE_NAMES = {"File Path", "Local Path", "MyMachineConfig", "Personal Settings"}
+# --- Configuration ---
+
+# Node names that will be protected if a node's name STARTS WITH one of these.
+PROTECTED_NODE_PREFIXES = {"File Path", "Local Path", "MyMachineConfig", "Personal Settings"}
+
+# --- Configuration for protecting specific node parameters ---
+# Node type for an HTTP Request node
+HTTP_NODE_TYPE = "n8n-nodes-base.httpRequest"
+# The specific URL that triggers the API key protection
+PROTECTED_URL = "http://localhost:5678/api/v1/workflows"
+# The name of the header containing the API key to preserve
+API_KEY_HEADER_NAME = "X-N8N-API-KEY"
+
 
 def log(message):
     """Log with timestamp"""
@@ -58,25 +69,69 @@ def backup_workflow(cursor, workflow_id):
     log(f"[BACKUP] Backed up workflow {workflow_id}")
 
 def merge_nodes(existing_nodes, new_nodes):
-    """Preserve nodes with protected names from existing workflow"""
-    existing_lookup = {node.get("name", ""): node for node in existing_nodes}
+    """
+    Merge new nodes into the existing node list, preserving protected nodes
+    and specific parameters within certain nodes (e.g., API keys).
+    """
+    existing_by_name = {node.get("name", ""): node for node in existing_nodes}
+    existing_by_id = {node.get("id", ""): node for node in existing_nodes}
+    
     result_nodes = []
+    new_node_names = {node.get("name", "") for node in new_nodes}
 
-    for node in new_nodes:
-        node_name = node.get("name", "")
-        if node_name in PROTECTED_NODE_NAMES and node_name in existing_lookup:
-            result_nodes.append(existing_lookup[node_name])
-            log(f"[PROTECT] Preserved protected node: {node_name}")
-        else:
+    # Helper function to check if a name has a protected prefix
+    def is_protected(name):
+        for prefix in PROTECTED_NODE_PREFIXES:
+            if name.startswith(prefix):
+                return True
+        return False
+
+    for new_node in new_nodes:
+        node_name = new_node.get("name", "")
+
+        # 1. Preserve entire nodes if their name starts with a protected prefix
+        if is_protected(node_name) and node_name in existing_by_name:
+            result_nodes.append(existing_by_name[node_name])
+            log(f"[PROTECT] Preserved protected node by prefix: '{node_name}'")
+            continue
+
+        # 2. Check for specific parameter preservation (HTTP node API key)
+        node_to_add = new_node
+        
+        is_http_node = node_to_add.get("type") == HTTP_NODE_TYPE
+        has_protected_url = node_to_add.get("parameters", {}).get("url") == PROTECTED_URL
+
+        if is_http_node and has_protected_url:
+            old_node = existing_by_id.get(new_node.get("id"))
+            if old_node:
+                try:
+                    # Find the old API key from the database version of the node
+                    old_api_key_value = None
+                    old_headers = old_node.get("parameters", {}).get("headerParameters", {}).get("parameters", [])
+                    for header in old_headers:
+                        if header.get("name") == API_KEY_HEADER_NAME:
+                            old_api_key_value = header.get("value")
+                            break
+                    
+                    # If an old key was found, update the new node with it
+                    if old_api_key_value is not None:
+                        new_headers = node_to_add.get("parameters", {}).get("headerParameters", {}).get("parameters", [])
+                        for header in new_headers:
+                            if header.get("name") == API_KEY_HEADER_NAME:
+                                header["value"] = old_api_key_value
+                                log(f"[PROTECT] Preserved API key in HTTP node: '{node_name}'")
+                                break
+                except Exception as e:
+                    log(f"[WARNING] Could not process API key preservation for node '{node_name}': {e}")
+        
+        result_nodes.append(node_to_add)
+
+    # 3. Add back any orphaned protected nodes from the old workflow
+    for name, node in existing_by_name.items():
+        if is_protected(name) and name not in new_node_names:
             result_nodes.append(node)
-
-    # Add any protected nodes missing in new_nodes
-    for existing_node in existing_nodes:
-        existing_name = existing_node.get("name", "")
-        if existing_name in PROTECTED_NODE_NAMES and not any(n.get("name") == existing_name for n in new_nodes):
-            result_nodes.append(existing_node)
-            log(f"[PROTECT] Preserved orphaned protected node: {existing_name}")
-
+            log(f"[PROTECT] Preserved orphaned protected node: '{name}'")
+            
     return result_nodes
 
 def find_workflow_by_name(cursor, workflow_name):
@@ -203,3 +258,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
