@@ -223,7 +223,7 @@ export class ComfyUI_Server implements INodeType {
             const timeout = setTimeout(() => {
                 ws.close();
                 reject(new NodeOperationError(executeFunctions.getNode(), 'Job timed out.'));
-            }, 6500000);
+            }, 10800000);
 
             ws.on('message', (data) => {
                 clearTimeout(timeout);
