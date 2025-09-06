@@ -120,6 +120,7 @@ def main():
                 "audio_prompt_path": target_voice_path,
                 "exaggeration": input_data.get("exaggeration", 0.5),
                 "cfg_weight": input_data.get("cfg_weight", 0.5),
+                "seed": 100,  # <-- THIS IS THE ONLY CHANGE
             }
 
         # --- Perform Core Operation (TTS or VC) ---
