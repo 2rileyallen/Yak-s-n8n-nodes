@@ -71,6 +71,10 @@ def hex_to_rgba(hex_color, alpha=1.0):
     a = int(alpha * 255)
     return (r, g, b, a)
 
+def hex_to_ffmpeg_color(hex_color):
+    """Converts #RRGGBB to 0xRRGGBB for FFmpeg's drawbox filter."""
+    return f"0x{hex_color.lstrip('#')}"
+
 def get_total_duration(words):
     """Gets the end time of the last word in the list."""
     return math.ceil(words[-1]['end']) if words else 0
@@ -82,6 +86,7 @@ def main():
 
     params_path = sys.argv[1]
     temp_files = []
+    command_for_error_logging = []
     try:
         with open(params_path, 'r', encoding='utf-8') as f:
             params = json.load(f)
@@ -92,6 +97,11 @@ def main():
         word_list = find_word_list(json.loads(transcription_data_raw) if isinstance(transcription_data_raw, str) else transcription_data_raw)
         if not word_list:
             raise ValueError("Could not find a valid word list in the Transcription Data.")
+
+        # (FIX) Sanitize the word list at the beginning to remove apostrophes.
+        for word_data in word_list:
+            if 'word' in word_data and isinstance(word_data['word'], str):
+                word_data['word'] = word_data['word'].replace("'", "")
 
         is_transparent = params.get('outputAsTransparentOverlay', True)
         max_words = int(params.get('maxWordsPerLine', 7))
@@ -208,7 +218,7 @@ def main():
             # Layer text on top
             for j, line_text in enumerate(lines):
                 line_y_pos = start_y + (j * line_height)
-                escaped_text = line_text.replace("'", "'\\''").replace(":", "\\:").replace(",", "\\,")
+                escaped_text = line_text.replace(":", "\\:").replace(",", "\\,")
                 
                 next_stream_name = f"v_txt_{i}_{j}"
                 text_filter = (
@@ -241,6 +251,7 @@ def main():
             command.extend(['-c:v', 'libx264', '-c:a', 'aac', '-pix_fmt', 'yuv420p'])
 
         command.append(output_path)
+        command_for_error_logging = command
         
         is_windows = platform.system() == "Windows"
         result = subprocess.run(command, check=True, capture_output=True, text=True, shell=is_windows)
@@ -249,7 +260,8 @@ def main():
 
     except (subprocess.CalledProcessError, ValueError, FileNotFoundError) as e:
         error_message = f"FFmpeg command failed. Stderr: {e.stderr.strip()}" if hasattr(e, 'stderr') else str(e)
-        print(json.dumps({"error": error_message, "command": " ".join(command)}))
+        safe_command_str = " ".join(map(str, command_for_error_logging))
+        print(json.dumps({"error": error_message, "command": safe_command_str}))
         sys.exit(1)
     finally:
         for f in temp_files:
