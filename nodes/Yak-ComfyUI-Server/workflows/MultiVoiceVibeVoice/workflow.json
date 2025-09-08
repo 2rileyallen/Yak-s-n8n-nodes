@@ -1,0 +1,115 @@
+{
+  "12": {
+    "inputs": {
+      "audio": "Riley's Voice.m4a",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudioSpeaker4"
+    }
+  },
+  "15": {
+    "inputs": {
+      "audio": "prompt 2 snowball.m4a",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudioSpeaker1"
+    }
+  },
+  "16": {
+    "inputs": {
+      "audio": "Riley's Voice.m4a",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudioSpeaker2"
+    }
+  },
+  "17": {
+    "inputs": {
+      "audio": "Riley's Voice.m4a",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudioSpeaker3"
+    }
+  },
+  "21": {
+    "inputs": {
+      "text": "[1]: Here is how you know somebody has true ... ENDURANCE. It goes back to a profound truth. From Ralph Waldo Emerson. Who once said the first wealth is ... HEALTH. And that is a powerful idea.\n\nOne. Your breath is calm. And steady. Even after exertion ... it settles QUICKLY. This shows profound oxygen use. It means your lungs are healthy. You recover ... COMPLETELY.\n\nTwo. You feel truly ... AWAKE. And ... ALERT. You don't feel groggy in the morning. This indicates true ... QUALITY sleep. The kind that charges your entire body. You start your day ... STRONG.\n\nThree. You enjoy being active. Movement is not a ... CHORE. This means your body feels ... GOOD. It fuels your desire to move. You feel like ... PLAYING.\n\nFour. Your skin has a healthy glow. This reflects internal ... VITALITY. ... TRULY. It is a sign of good circulation. It means your cells are ... THRIVING. You look vibrant. And ... FRESH.\n\nSo remember this simple truth. Lasting energy comes from three pillars... calm breathing... morning alertness... and active living."
+    },
+    "class_type": "TextInput_",
+    "_meta": {
+      "title": "Text Input"
+    }
+  },
+  "24": {
+    "inputs": {
+      "text": [
+        "21",
+        0
+      ],
+      "model": "VibeVoice-Large",
+      "attention_type": "auto",
+      "free_memory_after_generate": true,
+      "diffusion_steps": 20,
+      "seed": 100,
+      "cfg_scale": 1.3,
+      "use_sampling": false,
+      "temperature": 0.95,
+      "top_p": 0.95,
+      "speaker1_voice": [
+        "15",
+        0
+      ],
+      "speaker2_voice": [
+        "16",
+        0
+      ],
+      "speaker3_voice": [
+        "17",
+        0
+      ],
+      "speaker4_voice": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "VibeVoiceMultipleSpeakersNode",
+    "_meta": {
+      "title": "VibeVoice Multiple Speakers"
+    }
+  },
+  "25": {
+    "inputs": {
+      "audio": [
+        "24",
+        0
+      ]
+    },
+    "class_type": "VibeVoiceFreeMemoryNode",
+    "_meta": {
+      "title": "VibeVoice Free Memory"
+    }
+  },
+  "26": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "quality": "128k",
+      "audioUI": "",
+      "audio": [
+        "25",
+        0
+      ]
+    },
+    "class_type": "SaveAudioMP3",
+    "_meta": {
+      "title": "Save Audio (MP3)"
+    }
+  }
+}

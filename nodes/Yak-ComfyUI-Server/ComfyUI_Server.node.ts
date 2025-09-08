@@ -293,6 +293,9 @@ export class ComfyUI_Server implements INodeType {
                             const prefix = prop.name.replace('FilePath', '');
                             if (rawUserInputs[`${prefix}UseFilePath`] === true) {
                                 const filePath = rawUserInputs[prop.name] as string;
+                                if (!filePath || filePath.trim() === '') {
+                                    continue;
+                                }
                                 const buffer = await fs.readFile(filePath);
                                 const filename = path.basename(filePath);
                                 filesToUpload.push({ key: mapsToKey, buffer, filename });

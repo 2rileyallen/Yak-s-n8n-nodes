@@ -122,7 +122,7 @@
         0
       ],
       "audio": [
-        "228",
+        "214",
         0
       ]
     },
@@ -198,7 +198,7 @@
       "chunk_length": 10,
       "chunk_overlap": 0.1,
       "audio": [
-        "228",
+        "214",
         0
       ]
     },
@@ -319,7 +319,7 @@
   "197": {
     "inputs": {
       "audio": [
-        "228",
+        "214",
         0
       ]
     },
@@ -362,6 +362,41 @@
     "class_type": "LoadAudio",
     "_meta": {
       "title": "LoadAudio"
+    }
+  },
+  "212": {
+    "inputs": {
+      "audioUI": "",
+      "audio": [
+        "170",
+        3
+      ]
+    },
+    "class_type": "PreviewAudio",
+    "_meta": {
+      "title": "PreviewAudio"
+    }
+  },
+  "214": {
+    "inputs": {
+      "text": "Here's how you know somebody has true endurance. It goes back to a profound truth from Ralph Waldo Emerson, who once said the first wealth is health. And that is a powerful idea. First, your breath is calm and steady. Even after exertion, it settles quickly. This shows profound oxygen use. It means your lungs are healthy and you recover completely. Second, you feel truly awake and alert. You don't feel groggy in the morning. This indicates true quality sleep, the kind that charges your entire body. You start your day strong. Third, you enjoy being active. Movement is not a chore. This means your body feels good and it fuels your desire to move. You feel like playing. Fourth, your skin has a healthy glow. This reflects internal vitality, truly. It is a sign of good circulation and it means your cells are thriving. You look vibrant and fresh. So remember this simple truth. Lasting energy comes from the three pillars of calm breathing, morning alertness, and active living.",
+      "model": "VibeVoice-Large",
+      "attention_type": "auto",
+      "free_memory_after_generate": true,
+      "diffusion_steps": 20,
+      "seed": 100,
+      "cfg_scale": 1.3,
+      "use_sampling": false,
+      "temperature": 0.95,
+      "top_p": 0.95,
+      "voice_to_clone": [
+        "209",
+        0
+      ]
+    },
+    "class_type": "VibeVoiceSingleSpeakerNode",
+    "_meta": {
+      "title": "VibeVoice Single Speaker"
     }
   },
   "217": {
@@ -432,20 +467,6 @@
     "class_type": "MathExpression|pysssss",
     "_meta": {
       "title": "Math Expression 🐍"
-    }
-  },
-  "228": {
-    "inputs": {
-      "start_time": "0:00",
-      "end_time": "60:00",
-      "audio": [
-        "209",
-        0
-      ]
-    },
-    "class_type": "AudioCrop",
-    "_meta": {
-      "title": "AudioCrop"
     }
   }
 }

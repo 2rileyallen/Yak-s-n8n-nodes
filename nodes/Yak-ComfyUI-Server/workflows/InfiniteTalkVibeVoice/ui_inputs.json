@@ -36,14 +36,14 @@
       "mapsTo": "inputImage"
     },
     {
-      "displayName": "Use File Path for Input Audio",
+      "displayName": "Use File Path for Input Reference Audio Voice",
       "name": "inputAudioUseFilePath",
       "type": "boolean",
       "default": true,
       "description": "Use a file path for the input audio. Uncheck to use binary data."
     },
     {
-      "displayName": "Audio File Path",
+      "displayName": "Reference Audio Voice File Path",
       "name": "inputAudioFilePath",
       "type": "string",
       "default": "",
@@ -52,7 +52,7 @@
       "mapsTo": "inputAudio"
     },
     {
-      "displayName": "Audio Binary Property Name",
+      "displayName": "Reference Audio Voice Binary Property Name",
       "name": "inputAudioBinaryPropertyName",
       "type": "string",
       "default": "data",
@@ -66,7 +66,7 @@
       "default": ""
     },
     {
-      "displayName": "Aspect Ratio Warning",
+      "displayName": "IMPORTANT: Match the two dropdowns below.",
       "name": "aspectRatioNotice",
       "type": "notice",
       "default": "IMPORTANT: Match the two dropdowns below. It won't work otherwise."
@@ -106,28 +106,14 @@
       "mapsTo": "fps"
     },
     {
-      "displayName": "--- Audio Settings ---",
-      "name": "audioSettingsNotice",
-      "type": "notice",
-      "default": ""
-    },
-    {
-      "displayName": "Audio Start Time",
-      "name": "audioStartTime",
+      "displayName": "Text Input",
+      "name": "textInput",
       "type": "string",
-      "default": "0:00",
-      "placeholder": "MM:SS",
-      "description": "Start time for the audio crop.",
-      "mapsTo": "audioStartTime"
-    },
-    {
-      "displayName": "Audio End Time",
-      "name": "audioEndTime",
-      "type": "string",
-      "default": "9999:00",
-      "placeholder": "MM:SS",
-      "description": "End time for the audio crop. Use a large number for the full duration.",
-      "mapsTo": "audioEndTime"
+      "default": "",
+      "placeholder": "Text goes here",
+      "description": "Text for TTS",
+      "required": true,
+      "mapsTo": "textInput"
     },
     {
       "displayName": "--- Output Settings ---",
@@ -195,13 +181,9 @@
       "nodeId": "202",
       "path": "inputs.value"
     },
-    "audioStartTime": {
-      "nodeId": "228",
-      "path": "inputs.start_time"
-    },
-    "audioEndTime": {
-      "nodeId": "228",
-      "path": "inputs.end_time"
+    "textInput": {
+      "nodeId": "214",
+      "path": "inputs.text"
     }
   }
 }
