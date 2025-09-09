@@ -1,5 +1,5 @@
 {
-  "output_node_id": "131",
+  "output_node_id": "23",
   "output_file_filter": {
     "type": "endsWith",
     "value": "-audio.mp4"
@@ -174,33 +174,33 @@
   ],
   "mappings": {
     "inputImage": {
-      "nodeId": "133",
+      "nodeId": "12",
       "path": "inputs.image",
       "is_media_input": true
     },
     "inputAudio": {
-      "nodeId": "209",
+      "nodeId": "19",
       "path": "inputs.audio",
       "is_media_input": true
     },
     "widthAspectRatio": {
-      "nodeId": "224",
+      "nodeId": "69",
       "path": "inputs.value"
     },
     "heightAspectRatio": {
-      "nodeId": "225",
+      "nodeId": "70",
       "path": "inputs.value"
     },
     "fps": {
-      "nodeId": "202",
+      "nodeId": "66",
       "path": "inputs.value"
     },
     "audioStartTime": {
-      "nodeId": "228",
+      "nodeId": "60",
       "path": "inputs.start_time"
     },
     "audioEndTime": {
-      "nodeId": "228",
+      "nodeId": "60",
       "path": "inputs.end_time"
     }
   }

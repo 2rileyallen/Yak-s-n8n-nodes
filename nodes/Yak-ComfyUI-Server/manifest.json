@@ -7,12 +7,6 @@
       "workflowFile": "workflows/InfiniteTalk/workflow.json"
     },
     {
-      "name": "Infinite Talk VibeVoice",
-      "value": "InfiniteTalkVibeVoice",
-      "uiFile": "workflows/InfiniteTalkVibeVoice/ui_inputs.json",
-      "workflowFile": "workflows/InfiniteTalkVibeVoice/workflow.json"
-    },
-    {
       "name": "Multi Voice VibeVoice",
       "value": "MultiVoiceVibeVoice",
       "uiFile": "workflows/MultiVoiceVibeVoice/ui_inputs.json",
