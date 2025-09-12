@@ -12,6 +12,67 @@ import * as fs from 'fs';
 import { binaryToTempFile } from '../../SharedFunctions/binaryToTempFile';
 import { fileToBinary } from '../../SharedFunctions/fileToBinary';
 
+// --- Text Processing Functions ---
+// These functions are now integrated directly into the node to pre-process the script.
+
+function normalizeApostrophes(text: string): string {
+	return text.replace(/’/g, "'"); // convert curly apostrophe to straight
+}
+
+function expandContractions(text: string): string {
+	const contractions: { [key: string]: string } = {
+		"here's": "here is", "it's": "it is", "that's": "that is", "what's": "what is",
+		"where's": "where is", "when's": "when is", "who's": "who is", "how's": "how is",
+		"there's": "there is", "he's": "he is", "she's": "she is", "let's": "let us",
+		"can't": "cannot", "won't": "will not", "don't": "do not", "doesn't": "does not",
+		"didn't": "did not", "haven't": "have not", "hasn't": "has not", "hadn't": "had not",
+		"wouldn't": "would not", "shouldn't": "should not", "couldn't": "could not",
+		"isn't": "is not", "aren't": "are not", "wasn't": "was not", "weren't": "were not",
+		"I'm": "I am", "you're": "you are", "we're": "we are", "they're": "they are",
+		"I've": "I have", "you've": "you have", "we've": "we have", "they've": "they have",
+		"I'll": "I will", "you'll": "you will", "he'll": "he will", "she'll": "she will",
+		"we'll": "we will", "they'll": "they will", "I'd": "I would", "you'd": "you would",
+		"he'd": "he would", "she'd": "she would", "we'd": "we would", "they'd": "they would"
+	};
+	let expandedText = text;
+	for (const [contraction, expansion] of Object.entries(contractions)) {
+		const regex = new RegExp(`\\b${contraction}\\b`, "gi");
+		expandedText = expandedText.replace(regex, (match) => {
+			if (match[0] === match[0].toUpperCase()) {
+				return expansion.charAt(0).toUpperCase() + expansion.slice(1);
+			}
+			return expansion;
+		});
+	}
+	return expandedText;
+}
+
+function cleanText(text: string): string {
+	return text
+		.replace(/['"]/g, " ")    // replace leftover apostrophes/quotes with spaces
+		.replace(/\\/g, "")       // remove backslashes
+		.replace(/\s+/g, " ")     // normalize spaces
+		.trim();
+}
+
+function processAndChunkScript(text: string, sentencesPerChunk = 3): string[] {
+	const normalized = normalizeApostrophes(text);
+	const expanded = expandContractions(normalized);
+	const sanitized = cleanText(expanded);
+	const sentences = sanitized
+		.split(/(?<=[.!?])\s+/)
+		.map(s => s.trim())
+		.filter(s => s.length > 0);
+
+	const chunks: string[] = [];
+	for (let i = 0; i < sentences.length; i += sentencesPerChunk) {
+		const chunk = sentences.slice(i, i + sentencesPerChunk);
+		chunks.push(chunk.join(" "));
+	}
+	return chunks;
+}
+
+
 export class ChatterboxTTS implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Yak - ChatterboxTTS',
@@ -31,7 +92,7 @@ export class ChatterboxTTS implements INodeType {
 				type: 'options',
 				options: [
 					{
-						name: 'Text-to-Speech',
+						name: 'Text-to-Speech (from Script)',
 						value: 'tts',
 					},
 					{
@@ -40,17 +101,10 @@ export class ChatterboxTTS implements INodeType {
 					},
 				],
 				default: 'tts',
-				description: 'Choose whether to generate speech from text or convert the voice in an audio file.',
+				description: 'Choose whether to generate speech from a script or convert an existing audio file.',
 			},
 
 			// --- Output Settings ---
-			{
-				displayName: 'Combine Outputs',
-				name: 'combineOutputs',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to combine the audio generated from all input items into a single file.',
-			},
 			{
 				displayName: 'Output as File Path',
 				name: 'outputAsFilePath',
@@ -79,18 +133,7 @@ export class ChatterboxTTS implements INodeType {
 
 			// --- Text Input (TTS mode) ---
 			{
-				displayName: '--- Text Input ---',
-				name: 'textInputNotice',
-				type: 'notice',
-				default: '',
-				displayOptions: {
-					show: {
-						operationMode: ['tts'],
-					},
-				},
-			},
-			{
-				displayName: 'Text to Speak',
+				displayName: 'Script',
 				name: 'text',
 				type: 'string',
 				default: '',
@@ -99,8 +142,11 @@ export class ChatterboxTTS implements INodeType {
 						operationMode: ['tts'],
 					},
 				},
-				placeholder: 'Enter text here',
-				description: 'The text to convert to speech.',
+				typeOptions: {
+					multiline: true,
+				},
+				placeholder: 'Enter your full script here...',
+				description: 'The full text script to convert to speech. The node will automatically clean and chunk the text.',
 				required: true,
 			},
 
@@ -230,199 +276,181 @@ export class ChatterboxTTS implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const returnData: INodeExecutionData[] = [];
-		const combineOutputs = this.getNodeParameter('combineOutputs', 0, false) as boolean;
 		const temporaryChunkPaths: string[] = [];
+		const filesToCleanup: string[] = [];
 
-		// --- Loop to generate all individual chunks ---
-		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
-			let tempJsonPath: string | undefined;
+		// We assume a single item defines the entire job (e.g., one script, one voice).
+		// All parameters are read from the first item.
+		const itemIndex = 0;
 
-			try {
-				const operationMode = this.getNodeParameter('operationMode', itemIndex, 'tts') as string;
-				const outputAsFilePath = this.getNodeParameter('outputAsFilePath', itemIndex, false) as boolean;
-				const exaggeration = this.getNodeParameter('exaggeration', itemIndex, 0.5) as number;
-				const cfgWeight = this.getNodeParameter('cfgWeight', itemIndex, 0.5) as number;
+		try {
+			// --- 1. Get all shared parameters for the job ---
+			const operationMode = this.getNodeParameter('operationMode', itemIndex, 'tts') as string;
+			const exaggeration = this.getNodeParameter('exaggeration', itemIndex, 0.5) as number;
+			const cfgWeight = this.getNodeParameter('cfgWeight', itemIndex, 0.5) as number;
 
-				const tempInputDir = path.join(process.cwd(), 'temp', 'input');
-				const tempOutputDir = path.join(process.cwd(), 'temp', 'output');
-				fs.mkdirSync(tempInputDir, { recursive: true });
-				fs.mkdirSync(tempOutputDir, { recursive: true });
+			const tempInputDir = path.join(process.cwd(), 'temp', 'input');
+			const tempOutputDir = path.join(process.cwd(), 'temp', 'output');
+			fs.mkdirSync(tempInputDir, { recursive: true });
+			fs.mkdirSync(tempOutputDir, { recursive: true });
 
-				const payload: IDataObject = {
-					mode: operationMode,
-					exaggeration: exaggeration,
-					cfg_weight: cfgWeight,
-				};
+			// --- 2. Prepare the base payload and voice file ---
+			const basePayload: IDataObject = {
+				mode: operationMode,
+				exaggeration: exaggeration,
+				cfg_weight: cfgWeight,
+			};
 
-				if (outputAsFilePath) {
-					const finalOutputFilePath = this.getNodeParameter('outputFilePath', itemIndex, '') as string;
-					payload.output_extension = path.extname(finalOutputFilePath);
+			const targetUseFilePath = this.getNodeParameter('targetUseFilePath', itemIndex, false) as boolean;
+			let targetVoicePath: string;
+			if (targetUseFilePath) {
+				targetVoicePath = this.getNodeParameter('targetFilePath', itemIndex, '') as string;
+			} else {
+				const propertyName = this.getNodeParameter('targetBinaryPropertyName', itemIndex, 'data') as string;
+				if (!items[itemIndex].binary?.[propertyName]) {
+					throw new NodeOperationError(this.getNode(), `Target Voice binary data not found in property '${propertyName}'.`);
 				}
+				targetVoicePath = await binaryToTempFile(this, itemIndex, propertyName, tempInputDir);
+			}
+			basePayload.target_voice_path = targetVoicePath;
 
-				const targetUseFilePath = this.getNodeParameter('targetUseFilePath', itemIndex, false) as boolean;
-				let targetVoicePath: string;
-				if (targetUseFilePath) {
-					targetVoicePath = this.getNodeParameter('targetFilePath', itemIndex, '') as string;
-				} else {
-					const propertyName = this.getNodeParameter('targetBinaryPropertyName', itemIndex, 'data') as string;
-					if (!items[itemIndex].binary?.[propertyName]) {
-						throw new NodeOperationError(this.getNode(), `Target Voice binary data not found in property '${propertyName}'.`);
-					}
-					targetVoicePath = await binaryToTempFile(this, itemIndex, propertyName, tempInputDir);
+			// --- 3. Determine the list of tasks to execute ---
+			const tasks: IDataObject[] = [];
+
+			if (operationMode === 'tts') {
+				const fullScript = this.getNodeParameter('text', itemIndex, '') as string;
+				const textChunks = processAndChunkScript(fullScript);
+				for (const chunk of textChunks) {
+					tasks.push({ ...basePayload, text: chunk });
 				}
-				payload.target_voice_path = targetVoicePath;
-
-				if (operationMode === 'tts') {
-					payload.text = this.getNodeParameter('text', itemIndex, '') as string;
-				} else if (operationMode === 'vc') {
-					const sourceUseFilePath = this.getNodeParameter('sourceUseFilePath', itemIndex, false) as boolean;
+			} else if (operationMode === 'vc') {
+				// For VC, each input item is a separate task
+				for (let i = 0; i < items.length; i++) {
+					const sourceUseFilePath = this.getNodeParameter('sourceUseFilePath', i, false) as boolean;
 					let sourceAudioPath: string;
 					if (sourceUseFilePath) {
-						sourceAudioPath = this.getNodeParameter('sourceFilePath', itemIndex, '') as string;
+						sourceAudioPath = this.getNodeParameter('sourceFilePath', i, '') as string;
 					} else {
-						const propertyName = this.getNodeParameter('sourceBinaryPropertyName', itemIndex, 'data') as string;
-						if (!items[itemIndex].binary?.[propertyName]) {
-							throw new NodeOperationError(this.getNode(), `Source Audio binary data not found in property '${propertyName}'.`);
+						const propertyName = this.getNodeParameter('sourceBinaryPropertyName', i, 'data') as string;
+						if (!items[i].binary?.[propertyName]) {
+							throw new NodeOperationError(this.getNode(), `Source Audio binary data not found on item ${i}.`);
 						}
-						sourceAudioPath = await binaryToTempFile(this, itemIndex, propertyName, tempInputDir);
+						sourceAudioPath = await binaryToTempFile(this, i, propertyName, tempInputDir);
 					}
-					payload.source_audio_path = sourceAudioPath;
+					tasks.push({ ...basePayload, source_audio_path: sourceAudioPath });
 				}
-
-				tempJsonPath = path.join(tempInputDir, `payload_${Date.now()}_${itemIndex}.json`);
-				fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2));
-
-				const condaPythonPath = 'C:\\Users\\2rile\\miniconda3\\envs\\yak_chatterbox_env\\python.exe';
-				const pythonScriptPath = path.join(__dirname, 'ChatterboxTTS.py');
-				const pythonProcess = spawn(condaPythonPath, [pythonScriptPath, tempJsonPath]);
-
-				let scriptOutput = '';
-				let scriptError = '';
-				for await (const chunk of pythonProcess.stdout) { scriptOutput += chunk; }
-				for await (const chunk of pythonProcess.stderr) { scriptError += chunk; }
-				const exitCode = await new Promise(resolve => pythonProcess.on('close', resolve));
-
-				if (exitCode !== 0) {
-					throw new NodeOperationError(this.getNode(), `Python script exited with code ${exitCode}: ${scriptError}`);
-				}
-
-				const tempOutputFilePath = scriptOutput.trim();
-				if (!tempOutputFilePath || !fs.existsSync(tempOutputFilePath)) {
-					throw new NodeOperationError(this.getNode(), `Python script finished, but the output file was not found. Error: ${scriptError}`);
-				}
-
-				// --- Handle individual chunk based on combine setting ---
-				if (combineOutputs) {
-					temporaryChunkPaths.push(tempOutputFilePath);
-				} else {
-					// Not combining, so process and return each file immediately
-					let newItem: INodeExecutionData;
-					if (outputAsFilePath) {
-						const finalOutputFilePath = this.getNodeParameter('outputFilePath', itemIndex, '') as string;
-						fs.mkdirSync(path.dirname(finalOutputFilePath), { recursive: true });
-						fs.renameSync(tempOutputFilePath, finalOutputFilePath);
-						newItem = {
-							json: { ...items[itemIndex].json, message: 'Chatterbox operation successful.', outputFilePath: finalOutputFilePath },
-						};
-					} else {
-						const propertyName = this.getNodeParameter('outputBinaryPropertyName', itemIndex, 'data') as string;
-						const binaryData = await fileToBinary(tempOutputFilePath, propertyName, this.helpers);
-						fs.unlinkSync(tempOutputFilePath); // Clean up the temp file
-						newItem = {
-							json: { ...items[itemIndex].json, message: 'Chatterbox operation successful.' },
-							binary: { [propertyName]: binaryData },
-						};
-					}
-					returnData.push(newItem);
-				}
-
-			} catch (error) {
-				if (this.continueOnFail()) {
-					returnData.push({
-						json: this.getInputData(itemIndex)[0].json,
-						error: new NodeOperationError(this.getNode(), String(error)),
-						pairedItem: itemIndex
-					});
-					continue;
-				}
-				// Cleanup any chunks created so far if we're in combine mode and an error occurs
-				if (combineOutputs) { temporaryChunkPaths.forEach(p => fs.existsSync(p) && fs.unlinkSync(p)); }
-				throw error;
-			} finally {
-				if (tempJsonPath && fs.existsSync(tempJsonPath)) { fs.unlinkSync(tempJsonPath); }
 			}
-		} // --- End of item loop ---
 
+			// --- 4. Execute all tasks (Python calls) ---
+			for (let i = 0; i < tasks.length; i++) {
+				const payload = tasks[i];
+				let tempJsonPath: string | undefined;
 
-		// --- Post-Loop Combination Logic ---
-		if (combineOutputs && temporaryChunkPaths.length > 0) {
-			let finalFilePath: string;
-			const filesToCleanup: string[] = [...temporaryChunkPaths];
+				try {
+					tempJsonPath = path.join(tempInputDir, `payload_${Date.now()}_${i}.json`);
+					fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2));
+					filesToCleanup.push(tempJsonPath);
 
-			try {
-				if (temporaryChunkPaths.length === 1) {
-					finalFilePath = temporaryChunkPaths[0];
-				} else {
-					// Combine multiple chunks using ffmpeg
-					const tempInputDir = path.join(process.cwd(), 'temp', 'input');
-					const tempOutputDir = path.join(process.cwd(), 'temp', 'output');
-					const fileListPath = path.join(tempInputDir, `filelist_${Date.now()}.txt`);
-					filesToCleanup.push(fileListPath);
+					const condaPythonPath = 'C:\\Users\\2rile\\miniconda3\\envs\\yak_chatterbox_env\\python.exe';
+					const pythonScriptPath = path.join(__dirname, 'ChatterboxTTS.py');
+					const pythonProcess = spawn(condaPythonPath, [pythonScriptPath, tempJsonPath]);
 
-					const fileListContent = temporaryChunkPaths
-						.map(p => `file '${path.resolve(p).replace(/\\/g, '/')}'`)
-						.join('\n');
-					fs.writeFileSync(fileListPath, fileListContent);
-
-					const outputExtension = path.extname(temporaryChunkPaths[0]) || '.mp3';
-					const combinedOutputPath = path.join(tempOutputDir, `combined_${Date.now()}${outputExtension}`);
-
-					const ffmpegProcess = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', fileListPath, '-c', 'copy', combinedOutputPath]);
-
-					let ffmpegError = '';
-					for await (const chunk of ffmpegProcess.stderr) { ffmpegError += chunk; }
-					const exitCode = await new Promise(resolve => ffmpegProcess.on('close', resolve));
+					let scriptOutput = '';
+					let scriptError = '';
+					for await (const chunk of pythonProcess.stdout) { scriptOutput += chunk; }
+					for await (const chunk of pythonProcess.stderr) { scriptError += chunk; }
+					const exitCode = await new Promise(resolve => pythonProcess.on('close', resolve));
 
 					if (exitCode !== 0) {
-						throw new NodeOperationError(this.getNode(), `ffmpeg failed with code ${exitCode}: ${ffmpegError}`);
+						throw new NodeOperationError(this.getNode(), `Python script failed on chunk ${i}: ${scriptError}`);
 					}
-					finalFilePath = combinedOutputPath;
-				}
 
-				// Process the final combined file
-				const outputAsFilePath = this.getNodeParameter('outputAsFilePath', 0, false) as boolean;
-				let newItem: INodeExecutionData;
-
-				if (outputAsFilePath) {
-					const finalUserPath = this.getNodeParameter('outputFilePath', 0, '') as string;
-					fs.mkdirSync(path.dirname(finalUserPath), { recursive: true });
-					fs.renameSync(finalFilePath, finalUserPath);
-					newItem = {
-						json: { ...items[0].json, message: 'Chatterbox combination successful.', outputFilePath: finalUserPath },
-					};
-				} else {
-					const propertyName = this.getNodeParameter('outputBinaryPropertyName', 0, 'data') as string;
-					const binaryData = await fileToBinary(finalFilePath, propertyName, this.helpers);
-					filesToCleanup.push(finalFilePath); // Add final combined file to cleanup
-					newItem = {
-						json: { ...items[0].json, message: 'Chatterbox combination successful.' },
-						binary: { [propertyName]: binaryData },
-					};
-				}
-				returnData.push(newItem);
-
-			} finally {
-				// Final cleanup of all temporary files
-				filesToCleanup.forEach(filePath => {
-					if (fs.existsSync(filePath)) {
-						try { fs.unlinkSync(filePath); }
-						catch (e) { console.error(`Failed to cleanup temp file: ${filePath}`, e); }
+					const tempOutputFilePath = scriptOutput.trim();
+					if (!tempOutputFilePath || !fs.existsSync(tempOutputFilePath)) {
+						throw new NodeOperationError(this.getNode(), `Python script finished for chunk ${i}, but the output file was not found.`);
 					}
-				});
+					temporaryChunkPaths.push(tempOutputFilePath);
+
+				} catch (error) {
+					// Re-throw to be caught by the main try/catch block
+					throw error;
+				}
+			} // --- End of task loop ---
+
+
+			// --- 5. Combine chunks and finalize output ---
+			if (temporaryChunkPaths.length === 0) {
+				return [[]]; // No output was generated
 			}
-		}
 
-		return [returnData];
+			let finalCombinedPath: string;
+			filesToCleanup.push(...temporaryChunkPaths);
+
+			if (temporaryChunkPaths.length === 1) {
+				finalCombinedPath = temporaryChunkPaths[0];
+			} else {
+				const fileListPath = path.join(tempInputDir, `filelist_${Date.now()}.txt`);
+				filesToCleanup.push(fileListPath);
+
+				const fileListContent = temporaryChunkPaths
+					.map(p => `file '${path.resolve(p).replace(/\\/g, '/')}'`)
+					.join('\n');
+				fs.writeFileSync(fileListPath, fileListContent);
+
+				const outputExtension = path.extname(temporaryChunkPaths[0]) || '.mp3';
+				const combinedOutputPath = path.join(tempOutputDir, `combined_${Date.now()}${outputExtension}`);
+
+				const ffmpegProcess = spawn('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', fileListPath, '-c', 'copy', combinedOutputPath]);
+				let ffmpegError = '';
+				for await (const chunk of ffmpegProcess.stderr) { ffmpegError += chunk; }
+				const exitCode = await new Promise(resolve => ffmpegProcess.on('close', resolve));
+
+				if (exitCode !== 0) {
+					throw new NodeOperationError(this.getNode(), `ffmpeg failed to combine chunks: ${ffmpegError}`);
+				}
+				finalCombinedPath = combinedOutputPath;
+			}
+
+			// --- 6. Prepare the final return data ---
+			const outputAsFilePath = this.getNodeParameter('outputAsFilePath', 0, true) as boolean;
+			let finalItem: INodeExecutionData;
+
+			if (outputAsFilePath) {
+				const finalUserPath = this.getNodeParameter('outputFilePath', 0, '') as string;
+				fs.mkdirSync(path.dirname(finalUserPath), { recursive: true });
+				fs.renameSync(finalCombinedPath, finalUserPath);
+				finalItem = {
+					json: { ...items[0].json, message: 'Chatterbox operation successful.', outputFilePath: finalUserPath },
+				};
+			} else {
+				const propertyName = this.getNodeParameter('outputBinaryPropertyName', 0, 'data') as string;
+				const binaryData = await fileToBinary(finalCombinedPath, propertyName, this.helpers);
+				filesToCleanup.push(finalCombinedPath);
+				finalItem = {
+					json: { ...items[0].json, message: 'Chatterbox operation successful.' },
+					binary: { [propertyName]: binaryData },
+				};
+			}
+			return [this.helpers.returnJsonArray([finalItem])];
+
+		} catch (error) {
+			if (this.continueOnFail()) {
+				return [this.helpers.returnJsonArray([{
+					json: items[0].json,
+					error: new NodeOperationError(this.getNode(), String(error)),
+					pairedItem: { item: 0 }
+				}])];
+			}
+			throw error;
+		} finally {
+			// --- 7. Final Cleanup ---
+			filesToCleanup.forEach(filePath => {
+				if (fs.existsSync(filePath)) {
+					try { fs.unlinkSync(filePath); }
+					catch (e) { console.error(`Failed to cleanup temp file: ${filePath}`, e); }
+				}
+			});
+		}
 	}
 }
+

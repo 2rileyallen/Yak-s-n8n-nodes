@@ -99,7 +99,8 @@ def main():
             raise ValueError("Missing JSON payload file path argument.")
         json_payload_path = sys.argv[1]
 
-        with open(json_payload_path, 'r') as f:
+        # Read the JSON payload, explicitly using UTF-8 encoding to prevent errors.
+        with open(json_payload_path, 'r', encoding='utf-8') as f:
             input_data = json.load(f)
 
         mode = input_data.get("mode")
@@ -168,3 +169,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

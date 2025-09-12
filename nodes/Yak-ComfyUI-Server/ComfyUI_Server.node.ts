@@ -111,11 +111,6 @@ export class ComfyUI_Server implements INodeType {
         return JSON.parse(raw) as T;
     }
 
-    /**
-     * **NEW**: Generates a unique file path to prevent overwriting existing files.
-     * If the target path is a directory, it uses the original filename.
-     * If a file with the same name exists, it appends a counter (e.g., "image (1).png").
-     */
     private static async getUniqueFinalPath(
         targetPath: string,
         originalFileName: string,
@@ -212,6 +207,7 @@ export class ComfyUI_Server implements INodeType {
     }
 
     // --- WebSocket Connection ---
+    // **MODIFIED**: This function now handles the full handshake protocol.
     private static async waitForWebSocketResult(
         wsUrl: string,
         jobId: string,
@@ -220,17 +216,46 @@ export class ComfyUI_Server implements INodeType {
     ): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             const ws = new WebSocket(`${wsUrl}/ws/${jobId}`, undefined, { headers: headers as any });
-            const timeout = setTimeout(() => {
-                ws.close();
-                reject(new NodeOperationError(executeFunctions.getNode(), 'Job timed out.'));
-            }, 10800000);
+            let timeout: NodeJS.Timeout;
+
+            // Resets the timeout. This is called when the connection opens and on every ping.
+            const resetTimeout = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    ws.close();
+                    reject(new NodeOperationError(executeFunctions.getNode(), 'Job timed out. No message or ping received from server.'));
+                }, 10800000); // 3-hour timeout
+            };
+
+            ws.on('open', () => {
+                resetTimeout();
+            });
 
             ws.on('message', (data) => {
-                clearTimeout(timeout);
-                ws.close();
                 try {
-                    resolve(JSON.parse(data.toString()));
+                    const message = JSON.parse(data.toString());
+
+                    // If it's a heartbeat ping from the server, reset our timeout and continue listening.
+                    if (message.type === 'ping') {
+                        resetTimeout();
+                        return;
+                    }
+
+                    // It's the final result. Send acknowledgment back to the Gatekeeper.
+                    ws.send(JSON.stringify({ status: 'received' }), (err) => {
+                        if (err) {
+                            // Log if ack fails, but don't stop the workflow, as we have the data.
+                            console.error(`Failed to send acknowledgment for job ${jobId}:`, err);
+                        }
+                    });
+                    
+                    clearTimeout(timeout);
+                    ws.close();
+                    resolve(message);
+
                 } catch (e) {
+                    clearTimeout(timeout);
+                    ws.close();
                     reject(new NodeOperationError(executeFunctions.getNode(), 'Failed to parse WebSocket message.'));
                 }
             });
@@ -238,6 +263,10 @@ export class ComfyUI_Server implements INodeType {
             ws.on('error', (err) => {
                 clearTimeout(timeout);
                 reject(new NodeOperationError(executeFunctions.getNode(), `WebSocket error: ${err.message}`));
+            });
+
+            ws.on('close', () => {
+                clearTimeout(timeout);
             });
         });
     }
@@ -374,7 +403,6 @@ export class ComfyUI_Server implements INodeType {
                 const wsUrl = serverUrl.replace(/^http/, 'ws');
                 const finalResult = await ComfyUI_Server.waitForWebSocketResult(wsUrl, jobId, headers, this);
 
-                // **MODIFIED**: This function now handles file saving correctly.
                 const processResult = async (result: any) => {
                     const outputAsFilePath = rawUserInputs.outputAsFilePath as boolean;
                     const outputFilePath = rawUserInputs.outputFilePath as string;
