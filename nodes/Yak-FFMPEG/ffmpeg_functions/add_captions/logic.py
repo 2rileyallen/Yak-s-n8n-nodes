@@ -190,9 +190,14 @@ def main():
             total_text_height = len(lines) * line_height
             
             position_key = params.get('presetPositionPortrait', 'bottom')
-            if position_key == 'top': center_y = height / 6
-            elif position_key == 'middle': center_y = height / 2
-            else: center_y = 5 * height / 6
+            if position_key == 'upperTop': center_y = height / 8
+            elif position_key == 'top': center_y = 2 * height / 8
+            elif position_key == 'upperMiddle': center_y = 3 * height / 8
+            elif position_key == 'middle': center_y = 4 * height / 8
+            elif position_key == 'lowerMiddle': center_y = 5 * height / 8
+            elif position_key == 'bottom': center_y = 6 * height / 8
+            elif position_key == 'lowerBottom': center_y = 7 * height / 8
+            else: center_y = 6 * height / 8 # Default to 'bottom'
             start_y = center_y - (total_text_height / 2)
 
             # Layer backgrounds first

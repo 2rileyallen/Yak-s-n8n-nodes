@@ -324,9 +324,13 @@
                 }
             },
             "options": [
+                { "name": "Upper Top", "value": "upperTop" },
                 { "name": "Top", "value": "top" },
+                { "name": "Upper Middle", "value": "upperMiddle" },
                 { "name": "Middle", "value": "middle" },
-                { "name": "Bottom", "value": "bottom" }
+                { "name": "Lower Middle", "value": "lowerMiddle" },
+                { "name": "Bottom", "value": "bottom" },
+                { "name": "Lower Bottom", "value": "lowerBottom" }
             ],
             "default": "bottom"
         },
