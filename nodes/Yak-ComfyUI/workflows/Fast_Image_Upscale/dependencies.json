@@ -1,0 +1,10 @@
+{
+  "models": [
+    {
+      "name": "2xLiveActionV1_SPAN_490000.pth",
+      "type": "upscale_model",
+      "install_path": "models/upscale_models/",
+      "download_url": "https://raw.githubusercontent.com/jcj83429/upscaling/f73a3a02874360ec6ced18f8bdd8e43b5d7bba57/2xLiveActionV1_SPAN/2xLiveActionV1_SPAN_490000.pth"
+    }
+  ]
+}

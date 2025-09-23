@@ -1,0 +1,119 @@
+{
+  "properties": [
+    {
+      "displayName": "--- Input Settings ---",
+      "name": "inputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Use File Path for Input Video",
+      "name": "inputVideoUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Use a file path for the input video. Uncheck to use binary data from a previous node."
+    },
+    {
+      "displayName": "Video File Path",
+      "name": "inputVideoFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "inputVideoUseFilePath": [
+            true
+          ]
+        }
+      },
+      "placeholder": "/path/to/your/video.mp4",
+      "description": "The full file path to the source video to be used.",
+      "required": true,
+      "mapsTo": "inputVideo"
+    },
+    {
+      "displayName": "Binary Property Name",
+      "name": "inputVideoBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "inputVideoUseFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name of the binary property from a previous node containing the input video.",
+      "mapsTo": "inputVideo"
+    },
+    {
+      "displayName": "Resolution",
+      "name": "resolution",
+      "type": "number",
+      "default": 720,
+      "description": "The resolution to upscale the video to (e.g. 720, 1080, 1440, 2160).",
+      "required": true,
+      "mapsTo": "resolution"
+    },
+    {
+      "displayName": "--- Output Settings ---",
+      "name": "outputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Output as File Path",
+      "name": "outputAsFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to save the output to a specified file path. Uncheck to output as binary data."
+    },
+    {
+      "displayName": "Output File Path",
+      "name": "outputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            true
+          ]
+        }
+      },
+      "required": true,
+      "mapsTo": "outputFilePath"
+    },
+    {
+      "displayName": "Output Binary Property Name",
+      "name": "outputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            false
+          ]
+        }
+      },
+      "mapsTo": "outputBinaryPropertyName"
+    }
+  ],
+  "mappings": {
+    "inputVideo": {
+      "nodeId": "1",
+      "path": "inputs.video",
+      "is_media_input": true
+    },
+    "resolution": {
+      "nodeId": "8",
+      "path": "inputs.value"
+    },
+    "outputFilePath": {
+      "nodeId": "3",
+      "path": "inputs.filename_prefix"
+    },
+    "outputBinaryPropertyName": {
+      "nodeId": "3",
+      "path": "inputs.save_output"
+    }
+  }
+}

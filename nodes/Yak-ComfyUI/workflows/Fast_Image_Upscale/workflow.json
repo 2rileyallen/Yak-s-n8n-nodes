@@ -1,0 +1,175 @@
+{
+  "1": {
+    "inputs": {
+      "video": "1757781485670-0-fvzbh4.mp4",
+      "force_rate": 0,
+      "custom_width": 0,
+      "custom_height": 0,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1,
+      "format": "AnimateDiff",
+      "meta_batch": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "VHS_LoadVideo",
+    "_meta": {
+      "title": "Load Video (Upload) 🎥🅥🅗🅢"
+    }
+  },
+  "2": {
+    "inputs": {
+      "frames_per_batch": 120,
+      "count": 1
+    },
+    "class_type": "VHS_BatchManager",
+    "_meta": {
+      "title": "Meta Batch Manager 🎥🅥🅗🅢"
+    }
+  },
+  "3": {
+    "inputs": {
+      "frame_rate": [
+        "4",
+        0
+      ],
+      "loop_count": 0,
+      "filename_prefix": "UpscaledVideo",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "11",
+        0
+      ],
+      "audio": [
+        "1",
+        2
+      ],
+      "meta_batch": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "4": {
+    "inputs": {
+      "video_info": [
+        "1",
+        3
+      ]
+    },
+    "class_type": "VHS_VideoInfo",
+    "_meta": {
+      "title": "Video Info 🎥🅥🅗🅢"
+    }
+  },
+  "5": {
+    "inputs": {
+      "expression": "min(a, b)",
+      "a": [
+        "4",
+        3
+      ],
+      "b": [
+        "4",
+        4
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
+  },
+  "6": {
+    "inputs": {
+      "expression": "a * 2",
+      "a": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
+  },
+  "7": {
+    "inputs": {
+      "expression": "a / b",
+      "a": [
+        "8",
+        0
+      ],
+      "b": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
+  },
+  "8": {
+    "inputs": {
+      "value": 720
+    },
+    "class_type": "CR Value",
+    "_meta": {
+      "title": "⚙️ CR Value"
+    }
+  },
+  "9": {
+    "inputs": {
+      "upscale_model": [
+        "10",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "ImageUpscaleWithModel",
+    "_meta": {
+      "title": "Upscale Image (using Model)"
+    }
+  },
+  "10": {
+    "inputs": {
+      "model_name": "2xLiveActionV1_SPAN_490000.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "11": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "scale_by": [
+        "7",
+        1
+      ],
+      "image": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  }
+}

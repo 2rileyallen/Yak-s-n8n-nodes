@@ -36,6 +36,9 @@ powershell -command "Start-Process -FilePath '%CONDA_PATH%\condabin\conda.bat' -
 ECHO Starting MuseTalk Gatekeeper...
 powershell -command "Start-Process -FilePath '%CONDA_PATH%\condabin\conda.bat' -ArgumentList 'run', '-n', 'yak_musetalk_env', '--no-capture-output', 'uvicorn', 'gatekeeper:app', '--reload' -WorkingDirectory '%PROJECT_PATH%\nodes\Yak-MuseTalk' -WindowStyle Hidden"
 
+ECHO Starting IndexTTS2 Gatekeeper...
+powershell -command "Start-Process -FilePath '%CONDA_PATH%\condabin\conda.bat' -ArgumentList 'run', '--cwd', '%PROJECT_PATH%\Software\IndexTTS2', '-n', 'yak_indextts2_env', '--no-capture-output', 'uv', 'run', 'python', '%PROJECT_PATH%\nodes\Yak-IndexTTS2\gatekeeper.py' -WindowStyle Hidden"
+
 ECHO Starting n8n Server...
 wscript.exe "%PROJECT_PATH%\run_silent.vbs" "cmd /c n8n"
 
@@ -44,3 +47,4 @@ ECHO.
 ECHO --- All services have been started in the background. ---
 ECHO Please allow 15-30 seconds for all services to initialize.
 timeout /t 5 >nul
+
