@@ -56,4 +56,4 @@ Software/MuseTalk/*.pyc
 nodes/Yak-ComfyUI/gatekeeper_db.sqlite
 
 
-/Software/IndexTTS2/
+Software/IndexTTS2
