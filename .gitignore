@@ -54,3 +54,6 @@ Software/MuseTalk/*.pyc
 /nodes/Yak-ComfyUI/__pycache__/
 /nodes/Yak-ComfyUI/managed_models/*
 nodes/Yak-ComfyUI/gatekeeper_db.sqlite
+
+
+/Software/IndexTTS2/
