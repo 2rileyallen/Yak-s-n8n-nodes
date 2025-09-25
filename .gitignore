@@ -57,3 +57,4 @@ nodes/Yak-ComfyUI/gatekeeper_db.sqlite
 
 
 Software/IndexTTS2
+nodes/Yak-IndexTTS2/__pycache__/
