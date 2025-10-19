@@ -134,15 +134,42 @@ def parse_script_recursively(element, jobs, parent_settings):
             jobs.append({'type': 'text', 'content': child.tail.strip(), 'settings': parent_settings})
 
 def parse_script(tagged_text: str) -> list:
-    """Parses a string with custom XML-like tags into a list of processing jobs."""
+    """
+    Parses a string with custom XML-like tags into a list of processing jobs.
+    If no tags are found, it automatically wraps each sentence in a neutral <p> tag
+    to force segmentation and improve TTS stability.
+    """
+    
+    # --- NEW PRE-PROCESSING LOGIC ---
+    # Check for the presence of any XML-like tags.
+    # A simple check for '<' and '>' is sufficient for this purpose.
+    if '<' not in tagged_text and '>' not in tagged_text:
+        print("[INFO] No tags detected. Pre-emptively segmenting by sentence.")
+        # Split the text into sentences using regex.
+        sentences = list(filter(None, re.split(r'(?<=[.?!:;])\s+', tagged_text)))
+        
+        # Wrap each sentence in a neutral <p> tag and join them back together.
+        # This will force the XML parser to treat each sentence as a separate element.
+        if len(sentences) > 1:
+            tagged_text = "".join(f"<p>{s.strip()}</p>" for s in sentences)
+        else:
+            # If it's just one sentence, no need to wrap it.
+            tagged_text = sentences[0] if sentences else ""
+
+    # --- ORIGINAL LOGIC (Now processes the potentially modified text) ---
     jobs = []
     sanitized_text = "".join(c for c in tagged_text if c.isprintable() or c in '\n\r\t')
+    
+    # We add a custom <root> tag to ensure the XML is always well-formed.
     xml_string = f"<root>{sanitized_text}</root>"
+    
     try:
         root = ET.fromstring(xml_string.encode('utf-8'))
+        # This recursive function will now correctly segment the auto-tagged text.
         parse_script_recursively(root, jobs, {})
         return jobs
     except ET.ParseError as e:
+        # This is a fallback for any severe syntax errors in user-provided tags.
         raise ValueError(f"Failed to parse script tags. Check for syntax errors. Error: {e}")
 
 

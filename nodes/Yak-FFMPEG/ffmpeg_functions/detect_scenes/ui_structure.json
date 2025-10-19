@@ -1,0 +1,58 @@
+{
+    "properties": [
+        {
+            "displayName": "--- Source Video ---",
+            "name": "sourceVideoNotice",
+            "type": "notice",
+            "default": ""
+        },
+        {
+            "displayName": "Use Input Video File Path",
+            "name": "inputVideoUseFilePath",
+            "type": "boolean",
+            "default": true,
+            "description": "Toggle to use a direct file path for the input video. Uncheck to use binary data from a previous node."
+        },
+        {
+            "displayName": "Input Video File Path",
+            "name": "inputVideoFilePath",
+            "type": "string",
+            "default": "",
+            "displayOptions": { "show": { "inputVideoUseFilePath": [ true ] } },
+            "placeholder": "/path/to/your/video.mp4",
+            "description": "The absolute path to the video file on the system running n8n.",
+            "required": true
+        },
+        {
+            "displayName": "Input Video Binary Property",
+            "name": "inputVideoBinaryPropertyName",
+            "type": "string",
+            "default": "data",
+            "displayOptions": { "show": { "inputVideoUseFilePath": [ false ] } },
+            "description": "The name of the binary property on the input item containing the video data.",
+            "required": true
+        },
+        {
+            "displayName": "--- Detection Settings ---",
+            "name": "detectionSettingsNotice",
+            "type": "notice",
+            "default": ""
+        },
+        {
+            "displayName": "FFmpeg Scene Threshold",
+            "name": "ffmpegThreshold",
+            "type": "number",
+            "typeOptions": { "minValue": 0.1, "maxValue": 1.0, "numberStep": 0.05 },
+            "default": 0.4,
+            "description": "The sensitivity of FFmpeg's scene detector (0.0 to 1.0). Lower values are more sensitive and will find more cuts. Default is 0.4."
+        },
+        {
+            "displayName": "Minimum Scene Duration (s)",
+            "name": "minSceneDuration",
+            "type": "number",
+            "typeOptions": { "minValue": 0.0, "numberStep": 0.1 },
+            "default": 0.25,
+            "description": "Automatically ignore any detected scenes shorter than this duration in seconds. Helps remove flashes and glitches."
+        }
+    ]
+}

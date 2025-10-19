@@ -149,7 +149,7 @@ def main():
         corner_radius = 15
 
         # --- BUILD FILTER CHAIN ---
-        max_text_width = width * 0.9
+        max_text_width = width * 0.8
         all_filters = []
         last_video_stream = "0:v"
         

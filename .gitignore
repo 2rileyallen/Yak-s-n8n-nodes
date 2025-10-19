@@ -55,6 +55,15 @@ Software/MuseTalk/*.pyc
 /nodes/Yak-ComfyUI/managed_models/*
 nodes/Yak-ComfyUI/gatekeeper_db.sqlite
 
-
+Software/Wan2GP
 Software/IndexTTS2
 nodes/Yak-IndexTTS2/__pycache__/
+
+# --- Yak-Wan2GP Specific Files ---
+
+# Ignore the Gatekeeper's SQLite database
+nodes/Yak-Wan2GP/wan2gp_gatekeeper.sqlite
+nodes/Yak-Wan2GP/wan2gp_gatekeeper.sqlite-journal
+
+# Ignore Python cache for the Wan2GP gatekeeper
+nodes/Yak-Wan2GP/__pycache__/

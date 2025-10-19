@@ -233,6 +233,8 @@ export class IndexTTS2 implements INodeType {
                     payload.global_emotion_value = this.getNodeParameter('globalEmotionText', i, '') as string;
                 }
 
+                console.log('--- SENDING PAYLOAD ---', JSON.stringify(payload, null, 2));
+
                 // --- 2. Submit Job to Gatekeeper ---
                 const requestOptions: IHttpRequestOptions = {
                     method: 'POST',

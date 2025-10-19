@@ -31,6 +31,12 @@
       "scriptFile": "ffmpeg_functions/beat_detection/logic.py"
     },
     {
+        "name": "Detect Scenes",
+        "value": "detectScenes",
+        "uiFile": "ffmpeg_functions/detect_scenes/ui_structure.json",
+        "scriptFile": "ffmpeg_functions/detect_scenes/logic.py"
+    },
+    {
       "name": "File Cropping",
       "value": "fileCropping",
       "uiFile": "ffmpeg_functions/file_cropping/ui_structure.json",
@@ -73,10 +79,10 @@
       "scriptFile": "ffmpeg_functions/resize_files/logic.py"
     },
     {
-        "name": "Text Overlay",
-        "value": "textOverlay",
-        "uiFile": "ffmpeg_functions/text_overlay/ui_structure.json",
-        "scriptFile": "ffmpeg_functions/text_overlay/logic.py"
+      "name": "Text Overlay",
+      "value": "textOverlay",
+      "uiFile": "ffmpeg_functions/text_overlay/ui_structure.json",
+      "scriptFile": "ffmpeg_functions/text_overlay/logic.py"
     },
     {
       "name": "Video Transitions",

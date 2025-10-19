@@ -1,0 +1,207 @@
+{
+  "output_node_id": "23",
+  "output_file_filter": {
+    "type": "endsWith",
+    "value": "-audio.mp4"
+  },
+  "properties": [
+    {
+      "displayName": "--- Input Media ---",
+      "name": "inputMediaNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Use File Path for Input Image",
+      "name": "inputImageUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Use a file path for the input image. Uncheck to use binary data."
+    },
+    {
+      "displayName": "Image File Path",
+      "name": "inputImageFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": { "show": { "inputImageUseFilePath": [true] } },
+      "required": true,
+      "mapsTo": "inputImage"
+    },
+    {
+      "displayName": "Image Binary Property Name",
+      "name": "inputImageBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": { "show": { "inputImageUseFilePath": [false] } },
+      "mapsTo": "inputImage"
+    },
+    {
+      "displayName": "Use File Path for Input Audio",
+      "name": "inputAudioUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Use a file path for the input audio. Uncheck to use binary data."
+    },
+    {
+      "displayName": "Audio File Path",
+      "name": "inputAudioFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": { "show": { "inputAudioUseFilePath": [true] } },
+      "required": true,
+      "mapsTo": "inputAudio"
+    },
+    {
+      "displayName": "Audio Binary Property Name",
+      "name": "inputAudioBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": { "show": { "inputAudioUseFilePath": [false] } },
+      "mapsTo": "inputAudio"
+    },
+    {
+      "displayName": "--- Video Settings ---",
+      "name": "videoSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Aspect Ratio Warning",
+      "name": "aspectRatioNotice",
+      "type": "notice",
+      "default": "IMPORTANT: Match the two dropdowns below. It won't work otherwise."
+    },
+    {
+      "name": "widthAspectRatio",
+      "displayName": "Width Aspect Ratio",
+      "type": "options",
+      "options": [
+        { "name": "Square (1:1)", "value": 1 },
+        { "name": "Portrait (9:16)", "value": 9 },
+        { "name": "Landscape (16:9)", "value": 16 }
+      ],
+      "default": 1,
+      "description": "Choose the aspect ratio to match the Height.",
+      "mapsTo": "widthAspectRatio"
+    },
+    {
+      "name": "heightAspectRatio",
+      "displayName": "Height Aspect Ratio",
+      "type": "options",
+      "options": [
+        { "name": "Square (1:1)", "value": 1 },
+        { "name": "Portrait (9:16)", "value": 16 },
+        { "name": "Landscape (16:9)", "value": 9 }
+      ],
+      "default": 1,
+      "description": "Choose the aspect ratio to match the Width.",
+      "mapsTo": "heightAspectRatio"
+    },
+    {
+      "displayName": "FPS",
+      "name": "fps",
+      "type": "number",
+      "default": 24,
+      "description": "Frames per second for the output video.",
+      "mapsTo": "fps"
+    },
+    {
+      "displayName": "--- Audio Settings ---",
+      "name": "audioSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Audio Start Time",
+      "name": "audioStartTime",
+      "type": "string",
+      "default": "0:00",
+      "placeholder": "MM:SS",
+      "description": "Start time for the audio crop.",
+      "mapsTo": "audioStartTime"
+    },
+    {
+      "displayName": "Audio End Time",
+      "name": "audioEndTime",
+      "type": "string",
+      "default": "9999:00",
+      "placeholder": "MM:SS",
+      "description": "End time for the audio crop. Use a large number for the full duration.",
+      "mapsTo": "audioEndTime"
+    },
+    {
+      "displayName": "--- Output Settings ---",
+      "name": "outputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Output as File Path",
+      "name": "outputAsFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to save the output to a specified file path. Uncheck to output as binary data."
+    },
+    {
+      "displayName": "Output File Path",
+      "name": "outputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            true
+          ]
+        }
+      },
+      "required": true,
+      "mapsTo": "outputFilePath"
+    },
+    {
+      "displayName": "Output Binary Property Name",
+      "name": "outputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            false
+          ]
+        }
+      },
+      "mapsTo": "outputBinaryPropertyName"
+    }
+  ],
+  "mappings": {
+    "inputImage": {
+      "nodeId": "12",
+      "path": "inputs.image",
+      "is_media_input": true
+    },
+    "inputAudio": {
+      "nodeId": "19",
+      "path": "inputs.audio",
+      "is_media_input": true
+    },
+    "widthAspectRatio": {
+      "nodeId": "69",
+      "path": "inputs.value"
+    },
+    "heightAspectRatio": {
+      "nodeId": "70",
+      "path": "inputs.value"
+    },
+    "fps": {
+      "nodeId": "66",
+      "path": "inputs.value"
+    },
+    "audioStartTime": {
+      "nodeId": "60",
+      "path": "inputs.start_time"
+    },
+    "audioEndTime": {
+      "nodeId": "60",
+      "path": "inputs.end_time"
+    }
+  }
+}

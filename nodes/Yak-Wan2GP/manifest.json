@@ -1,0 +1,31 @@
+{
+  "modelFamilies": {
+    "qwen": {
+      "label": "Qwen Family",
+      "loraDirectory": "loras_qwen",
+      "profiles": [
+        { "name": "None (Default Settings)", "value": "" },
+        { "name": "Lightning v1.0 - 4 Steps", "value": "qwen/Lightning v1.0 - 4 Steps.json" },
+        { "name": "Lightning v1.1 - 8 Steps", "value": "qwen/Lightning v1.1 - 8 Steps.json" }
+      ]
+    },
+    "wan_2_2": {
+      "label": "Wan 2.2 Family",
+      "loraDirectory": "loras",
+      "profiles": [
+        { "name": "None (Default Settings)", "value": "" },
+        { "name": "Fun Inp HPS2 Reward 2 Phases - 4 Steps", "value": "wan_2_2/Fun Inp HPS2 Reward 2 Phases - 4 Steps.json" },
+        { "name": "Lightning v1.0 2 Phases - 4 Steps", "value": "wan_2_2/Lightning v1.0 2 Phases - 4 Steps.json" }
+      ]
+    }
+  },
+  "workflows": [
+    {
+      "value": "qwen_image",
+      "label": "Qwen Image Generation",
+      "family": "qwen",
+      "uiDefinition": "Workflows/qwen_image/ui.json",
+      "gatekeeperDefinition": "Workflows/qwen_image/workflow_base.json"
+    }
+  ]
+}

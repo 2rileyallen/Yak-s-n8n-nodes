@@ -1,0 +1,105 @@
+{
+  "properties": [
+    {
+      "displayName": "--- Workflow Settings ---",
+      "name": "workflowSettingsNotice",
+      "type": "notice",
+      "default": "Select a workflow to see its available parameters."
+    },
+    {
+      "displayName": "Performance Profile (Optional)",
+      "name": "profileName",
+      "type": "options",
+      "typeOptions": {
+        "loadOptionsMethod": "getProfiles"
+      },
+      "default": "",
+      "placeholder": "None (Default Settings)",
+      "description": "Select an optional performance profile to override default settings for speed and quality.",
+      "displayOptions": {
+        "show": {
+          "selectedWorkflow": [
+            "qwen_image"
+          ]
+        }
+      }
+    },
+    {
+      "displayName": "Prompt",
+      "name": "prompt",
+      "type": "string",
+      "typeOptions": {
+        "rows": 4
+      },
+      "default": "",
+      "placeholder": "A detailed painting of a pirate hat on a wooden table...",
+      "description": "The text prompt describing the image you want to generate.",
+      "required": true
+    },
+    {
+      "displayName": "Negative Prompt",
+      "name": "negative_prompt",
+      "type": "string",
+      "default": "",
+      "placeholder": "ugly, deformed, noisy, blurry, distorted",
+      "description": "Describe what you want to avoid in the image."
+    },
+    {
+      "displayName": "Resolution",
+      "name": "resolution",
+      "type": "options",
+      "options": [
+        { "name": "1664x928 (16:9 Landscape)", "value": "1664x928" },
+        { "name": "928x1664 (9:16 Portrait)", "value": "928x1664" },
+        { "name": "1328x1328 (1:1 Square)", "value": "1328x1328" },
+        { "name": "1472x1140 (4:3 Landscape)", "value": "1472x1140" },
+        { "name": "1140x1472 (3:4 Portrait)", "value": "1140x1472" }
+      ],
+      "default": "1664x928",
+      "description": "The dimensions of the output image."
+    },
+    {
+      "displayName": "--- Output Settings ---",
+      "name": "outputSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Output as File Path",
+      "name": "outputAsFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to save the output to a specified file path. Uncheck to output as binary data."
+    },
+    {
+      "displayName": "Output File Path",
+      "name": "outputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            true
+          ]
+        }
+      },
+      "placeholder": "/path/to/your/output.jpg",
+      "description": "The full file path or directory where the generated image will be saved.",
+      "required": true
+    },
+    {
+      "displayName": "Output Binary Property Name",
+      "name": "outputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name to give the output binary property for the generated image."
+    }
+  ]
+}
