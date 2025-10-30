@@ -158,25 +158,25 @@
   "mappings": {
     "referenceImage": {
       "nodeId": "57",
-      "path": "image",
+      "path": "inputs.image",
       "is_media_input": true
     },
     "drivingVideo": {
       "nodeId": "63",
-      "path": "video",
+      "path": "inputs.video",
       "is_media_input": true
     },
     "positivePrompt": {
       "nodeId": "227",
-      "path": "positive_prompt"
+      "path": "inputs.positive_prompt"
     },
     "width": {
       "nodeId": "63",
-      "path": "custom_width"
+      "path": "inputs.custom_width"
     },
     "height": {
       "nodeId": "63",
-      "path": "custom_height"
+      "path": "inputs.custom_height"
     }
   },
   "output_node_id": "204",

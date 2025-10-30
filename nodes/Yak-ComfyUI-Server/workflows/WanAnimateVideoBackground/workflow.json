@@ -38,7 +38,7 @@
       "save_metadata": true,
       "trim_to_audio": true,
       "pingpong": false,
-      "save_output": false,
+      "save_output": true,
       "images": [
         "234",
         0
