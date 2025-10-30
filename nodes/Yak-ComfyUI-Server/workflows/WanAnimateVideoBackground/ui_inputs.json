@@ -155,33 +155,34 @@
       "description": "The name of the binary property in n8n to put the output data in."
     }
   ],
-  "mappings": [
-    {
-      "property": "referenceImage",
-      "target": "57.image",
+  "mappings": {
+    "referenceImage": {
+      "nodeId": "57",
+      "path": "image",
       "is_media_input": true
     },
-    {
-      "property": "drivingVideo",
-      "target": "63.video",
+    "drivingVideo": {
+      "nodeId": "63",
+      "path": "video",
       "is_media_input": true
     },
-    {
-      "property": "positivePrompt",
-      "target": "227.positive_prompt"
+    "positivePrompt": {
+      "nodeId": "227",
+      "path": "positive_prompt"
     },
-    {
-      "property": "width",
-      "target": "63.custom_width"
+    "width": {
+      "nodeId": "63",
+      "path": "custom_width"
     },
-    {
-      "property": "height",
-      "target": "63.custom_height"
+    "height": {
+      "nodeId": "63",
+      "path": "custom_height"
     }
-  ],
+  },
   "output_node_id": "186",
   "output_file_filter": {
     "type": "endsWith",
     "value": "audio.mp4"
   }
 }
+
