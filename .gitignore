@@ -50,7 +50,7 @@ Software/MuseTalk/*.pyc
 /nodes/Yak-MuseTalk/musetalk_gatekeeper.sqlite
 
 # Ignore the entire ComfyUI application
-/Software/ComfyUI/
+Software/ComfyUI/
 /nodes/Yak-ComfyUI/__pycache__/
 /nodes/Yak-ComfyUI/managed_models/*
 nodes/Yak-ComfyUI/gatekeeper_db.sqlite
