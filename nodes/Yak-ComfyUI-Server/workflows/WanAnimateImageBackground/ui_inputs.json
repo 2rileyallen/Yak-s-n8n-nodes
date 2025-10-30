@@ -1,0 +1,187 @@
+{
+  "properties": [
+    {
+      "displayName": "--- Input Media ---",
+      "name": "mediaSep",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Reference Image",
+      "name": "referenceImageUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Enable to use a file path for the image, disable to use binary data."
+    },
+    {
+      "displayName": "Image File Path",
+      "name": "referenceImageFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "referenceImageUseFilePath": [
+            true
+          ]
+        }
+      },
+      "description": "The full path to the image file on the ComfyUI server.",
+      "mapsTo": "referenceImage"
+    },
+    {
+      "displayName": "Image Binary Property",
+      "name": "referenceImageBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "referenceImageUseFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name of the binary property in n8n holding the image data.",
+      "mapsTo": "referenceImage"
+    },
+    {
+      "displayName": "Driving Video",
+      "name": "drivingVideoUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Enable to use a file path for the video, disable to use binary data."
+    },
+    {
+      "displayName": "Video File Path",
+      "name": "drivingVideoFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "drivingVideoUseFilePath": [
+            true
+          ]
+        }
+      },
+      "description": "The full path to the video file on the ComfyUI server.",
+      "mapsTo": "drivingVideo"
+    },
+    {
+      "displayName": "Video Binary Property",
+      "name": "drivingVideoBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "drivingVideoUseFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name of the binary property in n8n holding the video data.",
+      "mapsTo": "drivingVideo"
+    },
+    {
+      "displayName": "--- Settings ---",
+      "name": "settingsSep",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Positive Prompt",
+      "name": "positivePrompt",
+      "type": "string",
+      "typeOptions": {
+        "multiLine": true
+      },
+      "default": "A man with dark, wet, curly hair stands in a narrow alleyway in the rain, looking intensely at the camera. He is wearing a dark, hooded, waterproof jacket that is glistening with moisture The hood is down exposing his hair and face. The background is out of focus, with a warm light source creating a soft glow behind him, contrasting with the dark and moody atmosphere of the scene. A red brick wall is visible on the left side of the frame.",
+      "mapsTo": "positivePrompt",
+      "description": "The text prompt describing the desired output."
+    },
+    {
+      "displayName": "Width",
+      "name": "width",
+      "type": "number",
+      "default": 576,
+      "description": "Must be divisible by 16. The reference image and driving video will be resized to this width.",
+      "mapsTo": "width"
+    },
+    {
+      "displayName": "Height",
+      "name": "height",
+      "type": "number",
+      "default": 1024,
+      "description": "Must be divisible by 16. The reference image and driving video will be resized to this height.",
+      "mapsTo": "height"
+    },
+    {
+      "displayName": "--- Output ---",
+      "name": "outputSep",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Output as File Path",
+      "name": "outputAsFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Enable to receive a file path for the output, disable to receive binary data."
+    },
+    {
+      "displayName": "Output File Path",
+      "name": "outputFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            true
+          ]
+        }
+      },
+      "description": "The local path on the n8n server to save the output file to."
+    },
+    {
+      "displayName": "Output Binary Property",
+      "name": "outputBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "outputAsFilePath": [
+            false
+          ]
+        }
+      },
+      "description": "The name of the binary property in n8n to put the output data in."
+    }
+  ],
+  "mappings": [
+    {
+      "property": "referenceImage",
+      "target": "57.image",
+      "is_media_input": true
+    },
+    {
+      "property": "drivingVideo",
+      "target": "63.video",
+      "is_media_input": true
+    },
+    {
+      "property": "positivePrompt",
+      "target": "227.positive_prompt"
+    },
+    {
+      "property": "width",
+      "target": "63.custom_width"
+    },
+    {
+      "property": "height",
+      "target": "63.custom_height"
+    }
+  ],
+  "output_node_id": "204",
+  "output_file_filter": {
+    "type": "endsWith",
+    "value": "audio.mp4"
+  }
+}

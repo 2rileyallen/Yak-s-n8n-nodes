@@ -17,6 +17,18 @@
       "value": "qwenVLVideoAnalyzer",
       "uiFile": "workflows/QwenVLVideoAnalyzer/ui_inputs.json",
       "workflowFile": "workflows/QwenVLVideoAnalyzer/workflow.json"
+    },
+    {
+      "name": "Wan Animate Video Background",
+      "value": "WanAnimateVideoBackground",
+      "uiFile": "workflows/WanAnimateVideoBackground/ui_inputs.json",
+      "workflowFile": "workflows/WanAnimateVideoBackground/workflow.json"
+    },
+    {
+      "name": "Wan Animate Image Background",
+      "value": "WanAnimateImageBackground",
+      "uiFile": "workflows/WanAnimateImageBackground/ui_inputs.json",
+      "workflowFile": "workflows/WanAnimateImageBackground/workflow.json"
     }
   ]
 }
