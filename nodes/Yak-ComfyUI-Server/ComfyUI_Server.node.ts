@@ -333,15 +333,16 @@ export class ComfyUI_Server implements INodeType {
                         } else if (prop.name.endsWith('BinaryPropertyName')) {
                             const prefix = prop.name.replace('BinaryPropertyName', '');
                             if (rawUserInputs[`${prefix}UseFilePath`] === false) {
-                                if (prop.name.startsWith('input')) {
-                                    const binaryPropName = rawUserInputs[prop.name] as string;
-                                    const binaryData = this.helpers.assertBinaryData(itemIndex, binaryPropName);
-                                    const buffer = await this.helpers.getBinaryDataBuffer(itemIndex, binaryPropName);
-                                    filesToUpload.push({ key: mapsToKey, buffer, filename: binaryData.fileName || 'file' });
-                                    valueToMap = binaryData.fileName;
-                                } else {
-                                    valueToMap = rawUserInputs[prop.name];
-                                }
+                                
+                                // --- THIS IS THE FIX ---
+                                // The check for 'prop.name.startsWith('input')' was too restrictive.
+                                // We just need to check if the property is for binary data.
+                                const binaryPropName = rawUserInputs[prop.name] as string;
+                                const binaryData = this.helpers.assertBinaryData(itemIndex, binaryPropName);
+                                const buffer = await this.helpers.getBinaryDataBuffer(itemIndex, binaryPropName);
+                                filesToUpload.push({ key: mapsToKey, buffer, filename: binaryData.fileName || 'file' });
+                                valueToMap = binaryData.fileName;
+                                // --- END OF FIX ---
                             }
                         } else {
                             valueToMap = rawUserInputs[prop.name];
@@ -403,25 +404,45 @@ export class ComfyUI_Server implements INodeType {
                 const wsUrl = serverUrl.replace(/^http/, 'ws');
                 const finalResult = await ComfyUI_Server.waitForWebSocketResult(wsUrl, jobId, headers, this);
 
+                // #############################################################
+                // #                  --- MODIFIED SECTION ---                   #
+                // # The 'processResult' function is updated to handle         #
+                // # both file outputs and text/JSON outputs.                  #
+                // #############################################################
+
                 const processResult = async (result: any) => {
-                    const outputAsFilePath = rawUserInputs.outputAsFilePath as boolean;
-                    const outputFilePath = rawUserInputs.outputFilePath as string;
-                    const outputBinaryPropertyName = rawUserInputs.outputBinaryPropertyName as string;
+                    // --- NEW CHECK ---
+                    // Check if the result looks like a file (it has 'data' and 'fileName')
+                    if (result.data && result.fileName) {
+                        // --- EXISTING FILE-HANDLING LOGIC ---
+                        const outputAsFilePath = rawUserInputs.outputAsFilePath as boolean;
+                        const outputFilePath = rawUserInputs.outputFilePath as string;
+                        const outputBinaryPropertyName = rawUserInputs.outputBinaryPropertyName as string;
 
-                    const binaryData = Buffer.from(result.data, 'base64');
+                        const binaryData = Buffer.from(result.data, 'base64');
 
-                    if (outputAsFilePath) {
-                        if (!outputFilePath) {
-                            throw new NodeOperationError(this.getNode(), 'An output directory/path must be provided.', { itemIndex });
+                        if (outputAsFilePath) {
+                            if (!outputFilePath) {
+                                throw new NodeOperationError(this.getNode(), 'An output directory/path must be provided.', { itemIndex });
+                            }
+                            const finalPath = await ComfyUI_Server.getUniqueFinalPath(outputFilePath, result.fileName);
+                            await fs.writeFile(finalPath, binaryData);
+                            return { json: { filePath: finalPath }, pairedItem: { item: itemIndex } };
+                        } else {
+                            const preparedData = await this.helpers.prepareBinaryData(binaryData, result.fileName, result.mimeType);
+                            return { json: {}, binary: { [outputBinaryPropertyName]: preparedData }, pairedItem: { item: itemIndex } };
                         }
-                        const finalPath = await ComfyUI_Server.getUniqueFinalPath(outputFilePath, result.fileName);
-                        await fs.writeFile(finalPath, binaryData);
-                        return { json: { filePath: finalPath }, pairedItem: { item: itemIndex } };
                     } else {
-                        const preparedData = await this.helpers.prepareBinaryData(binaryData, result.fileName, result.mimeType);
-                        return { json: {}, binary: { [outputBinaryPropertyName]: preparedData }, pairedItem: { item: itemIndex } };
+                        // --- NEW TEXT/JSON-HANDLING LOGIC ---
+                        // It's not a file, so just return the entire result object as JSON.
+                        // This will contain the text output (e.g., { "text_output": "park" })
+                        return { json: result, pairedItem: { item: itemIndex } };
                     }
                 };
+
+                // #############################################################
+                // #                --- END OF MODIFIED SECTION ---              #
+                // #############################################################
 
                 if (finalResult.format === 'multiple' && Array.isArray(finalResult.results)) {
                     for (const result of finalResult.results) {
@@ -442,4 +463,3 @@ export class ComfyUI_Server implements INodeType {
         return [returnData];
     }
 }
-

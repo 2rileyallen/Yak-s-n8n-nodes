@@ -1,0 +1,56 @@
+{
+  "3": {
+    "inputs": {
+      "output": "",
+      "source": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "Display Any (rgthree)",
+    "_meta": {
+      "title": "Display Any (rgthree)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "model_name": "Qwen3-VL-4B-Instruct",
+      "quantization": "None (FP16)",
+      "preset_prompt": "Prompt Style - Detailed",
+      "custom_prompt": "You are a professional video analyzer. Your task is to analyze the provided video and select the single tag from the following list that best describes the video's primary setting or environment: \n\nstore, parking-garage, warehouse, office, kitchen, bathroom, gym, classroom, restaurant, hospital, street, parking-lot, park, beach, farm, construction, dockyard, fair, stadium, road, pool, salon, hotel, bowling, city, hiking, snow, event, boat, airport, zoo\n\nRespond only with the chosen tag. Do not add any explanation, punctuation, or other text.",
+      "max_tokens": 1024,
+      "temperature": 0.6,
+      "top_p": 0.9,
+      "num_beams": 1,
+      "repetition_penalty": 1.2,
+      "frame_count": 16,
+      "device": "auto",
+      "keep_model_loaded": false,
+      "seed": 958981499143327,
+      "video": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "AILab_QwenVL_Advanced",
+    "_meta": {
+      "title": "QwenVL (Advanced)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "video": "8Jt2XEyMLCA_10.26_14.264.mp4",
+      "force_rate": 0,
+      "custom_width": 0,
+      "custom_height": 0,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1,
+      "format": "AnimateDiff"
+    },
+    "class_type": "VHS_LoadVideo",
+    "_meta": {
+      "title": "Load Video (Upload) 🎥🅥🅗🅢"
+    }
+  }
+}

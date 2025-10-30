@@ -1,0 +1,89 @@
+{
+  "output_node_id": "3",
+  "output_file_filter": null,
+  "properties": [
+    {
+      "displayName": "--- Input Media ---",
+      "name": "inputMediaNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "displayName": "Use File Path for Video",
+      "name": "videoUseFilePath",
+      "type": "boolean",
+      "default": true,
+      "description": "Use a file path for the input video. Uncheck to use binary data."
+    },
+    {
+      "displayName": "Video File Path",
+      "name": "videoFilePath",
+      "type": "string",
+      "default": "",
+      "displayOptions": {
+        "show": {
+          "videoUseFilePath": [
+            true
+          ]
+        }
+      },
+      "required": true,
+      "mapsTo": "video"
+    },
+    {
+      "displayName": "Video Binary Property Name",
+      "name": "videoBinaryPropertyName",
+      "type": "string",
+      "default": "data",
+      "displayOptions": {
+        "show": {
+          "videoUseFilePath": [
+            false
+          ]
+        }
+      },
+      "mapsTo": "video"
+    },
+    {
+      "displayName": "--- Analysis Settings ---",
+      "name": "analysisSettingsNotice",
+      "type": "notice",
+      "default": ""
+    },
+    {
+      "name": "analysisPrompt",
+      "displayName": "Analysis Prompt",
+      "type": "string",
+      "typeOptions": {
+        "multiline": true,
+        "rows": 10
+      },
+      "default": "You are a professional video analyzer. Your task is to analyze the provided video and select the single tag from the following list that best describes the video's primary setting or environment: \n\nstore, parking-garage, warehouse, office, kitchen, bathroom, gym, classroom, restaurant, hospital, street, parking-lot, park, beach, farm, construction, dockyard, fair, stadium, road, pool, salon, hotel, bowling, city, hiking, snow, event, boat, airport, zoo\n\nRespond only with the chosen tag. Do not add any explanation, punctuation, or other text.",
+      "description": "The prompt instructing the AI on how to analyze the video.",
+      "mapsTo": "custom_prompt"
+    },
+    {
+      "name": "frame_count",
+      "displayName": "Frame Count",
+      "type": "number",
+      "default": 16,
+      "description": "Number of frames to sample from the video for analysis.",
+      "mapsTo": "frame_count"
+    }
+  ],
+  "mappings": {
+    "video": {
+      "nodeId": "5",
+      "path": "inputs.video",
+      "is_media_input": true
+    },
+    "custom_prompt": {
+      "nodeId": "4",
+      "path": "inputs.custom_prompt"
+    },
+    "frame_count": {
+      "nodeId": "4",
+      "path": "inputs.frame_count"
+    }
+  }
+}

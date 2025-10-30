@@ -11,6 +11,12 @@
       "value": "MultiVoiceVibeVoice",
       "uiFile": "workflows/MultiVoiceVibeVoice/ui_inputs.json",
       "workflowFile": "workflows/MultiVoiceVibeVoice/workflow.json"
+    },
+    {
+      "name": "QwenVL Video Analyzer",
+      "value": "qwenVLVideoAnalyzer",
+      "uiFile": "workflows/QwenVLVideoAnalyzer/ui_inputs.json",
+      "workflowFile": "workflows/QwenVLVideoAnalyzer/workflow.json"
     }
   ]
 }
